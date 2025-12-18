@@ -29,16 +29,18 @@ public class Config {
     //public static final String SPARK_MODEL = "generalv3";//
 
 
-    //Mysql配置
-    public static final String MYSQL_LINK = "jdbc:mysql://localhost:3306/manager";
-    public static final String MYSQL_USERNAME = "root";
-    public static final String MYSQL_PASSWORD = "123456";
-    //Neo4j配置
-    public static final String NEO4J_LINK = "bolt://localhost:7687";
-    public static final String NEO4J_USERNAME = "neo4j";
-    public static final String NEO4J_PASSWORD = "12345678";
+        // Mysql configuration — read from environment variables if available
+        public static final String MYSQL_LINK = System.getenv().getOrDefault("MYSQL_URL", "jdbc:mysql://localhost:3306/manager?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8&allowPublicKeyRetrieval=true");
+        public static final String MYSQL_USERNAME = System.getenv().getOrDefault("MYSQL_USERNAME", "root");
+        public static final String MYSQL_PASSWORD = System.getenv().getOrDefault("MYSQL_PASSWORD", "123456");
 
-    public static final String UPLOAD_PATH ="/manager/upload";//项目所在盘符下的upload文件夹
+        // Neo4j configuration — supports environment overrides
+        public static final String NEO4J_LINK = System.getenv().getOrDefault("NEO4J_URI", System.getenv().getOrDefault("NEO4J_LINK", "bolt://localhost:7687"));
+        public static final String NEO4J_USERNAME = System.getenv().getOrDefault("NEO4J_USERNAME", "neo4j");
+        public static final String NEO4J_PASSWORD = System.getenv().getOrDefault("NEO4J_PASSWORD", "12345678");
+
+        // File upload path (can be mapped to a Docker volume)
+        public static final String UPLOAD_PATH = System.getenv().getOrDefault("UPLOAD_PATH", "/manager/upload"); //项目所在盘符下的upload文件夹
     public static final String PDF_PATH = UPLOAD_PATH;//"E:\\manager\\springboot\\pdfoutput";
     public static final String TXT_PATH = UPLOAD_PATH;//"E:\\manager\\springboot\\txtoutput";
     public static final String DOCX_PATH = UPLOAD_PATH;//"E:\\manager\\springboot\\docxoutput";

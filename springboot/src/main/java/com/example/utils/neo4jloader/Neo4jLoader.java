@@ -54,7 +54,13 @@ public class Neo4jLoader {
                             for (int i = 1; i <= columnCount; i++) {
                                 String columnName = metaData.getColumnLabel(i);
                                 String columnValue = resultSet.getString(i);
-                                rowMap.put(columnName, columnValue == null ? "" : columnValue.trim());
+                                String value = columnValue == null ? "" : columnValue.trim();
+                                // store both original and Capitalized key to handle case differences
+                                rowMap.put(columnName, value);
+                                if (columnName.length() > 0) {
+                                    String cap = columnName.substring(0,1).toUpperCase() + columnName.substring(1);
+                                    rowMap.put(cap, value);
+                                }
                             }
                             boolean shouldContinue = processRecord(session, rowMap);
                             if (!shouldContinue) {
@@ -72,7 +78,9 @@ public class Neo4jLoader {
     }
 
     private boolean processRecord(Session session, Map<String, String> row) {
-        String title = row.getOrDefault("Title", "").trim();
+            LogUtil_Neo4jLoader.log("Row keys: " + row.keySet());
+            String title = row.getOrDefault("Title", "").trim();
+            LogUtil_Neo4jLoader.log("Resolved title: '" + title + "'");
         if (title.isEmpty()) {
             LogUtil_Neo4jLoader.log("记录无标题，跳过");
             return true;

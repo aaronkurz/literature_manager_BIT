@@ -1,0 +1,65 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: lm_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: "123456"
+      MYSQL_DATABASE: "manager"
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL","mysqladmin ping -h localhost -P 3306 -uroot -p123456 || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  neo4j:
+    image: neo4j:5.10
+    container_name: lm_neo4j
+    environment:
+      NEO4J_AUTH: "neo4j/12345678"
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - neo4j_data:/data
+    # healthcheck removed because the official Neo4j image does not include curl/wget in
+    # the minimal runtime; the app's entrypoint will wait for the Neo4j bolt port.
+
+  app:
+    build:
+      context: ./springboot
+      dockerfile: Dockerfile
+    container_name: lm_app
+    depends_on:
+      - mysql
+      - neo4j
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/manager?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8&allowPublicKeyRetrieval=true"
+      SPRING_DATASOURCE_USERNAME: "root"
+      SPRING_DATASOURCE_PASSWORD: "123456"
+      MYSQL_URL: "jdbc:mysql://mysql:3306/manager?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8&allowPublicKeyRetrieval=true"
+      MYSQL_USERNAME: "root"
+      MYSQL_PASSWORD: "123456"
+      NEO4J_URI: "bolt://neo4j:7687"
+      NEO4J_USERNAME: "neo4j"
+      NEO4J_PASSWORD: "12345678"
+      UPLOAD_PATH: "/manager/upload"
+      APP_PORT: "9090"
+      WAIT_MYSQL_HOST: "mysql"
+      WAIT_MYSQL_PORT: "3306"
+      WAIT_NEO4J_HOST: "neo4j"
+      WAIT_NEO4J_PORT: "7687"
+    ports:
+      - "9090:9090"
+    volumes:
+      - uploads:/manager/upload
+    restart: unless-stopped
+
+volumes:
+  db_data:
+  neo4j_data:
+  uploads:

@@ -16,3 +16,23 @@
 ![图片文字描述](https://github.com/beomyo/literature_manager/blob/main/files/2025-03-13_11-02-17.jpg)
 管理员后台，公告、用户、论文管理
 ![图片文字描述](https://github.com/beomyo/literature_manager/blob/main/files/2025-03-13_11-02-37.jpg)
+
+---
+---
+
+## Run the backend (Docker) 🔧
+
+A full guide for running the backend with Docker Compose (MySQL, Neo4j, Spring Boot) is available at `docker/README.md`.
+
+Quick overview:
+
+- Start (from the project root):
+	- `docker compose up --build -d` — builds and starts MySQL, Neo4j, and the Spring Boot backend.
+- Main services & ports:
+	- Backend (Spring Boot): http://localhost:9090
+	- MySQL: 3306 (root / 123456, database `manager`; init script: `docker/mysql/init.sql`)
+	- Neo4j: 7474 (HTTP), 7687 (Bolt); default account `neo4j` / `12345678`
+- Data persistence:
+	- Uploads are stored at `/manager/upload` inside the app container (mapped to Docker volume `uploads` by default). To view files directly on the host, map that volume to a host path in `docker-compose.yml`.
+
+See `docker/README.md` for details on changing credentials, viewing logs, and triggering the knowledge-graph rebuild.
