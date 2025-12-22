@@ -12,29 +12,29 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * LLM utility - simplified to use only Qwen
+ * LLM utility - uses local Ollama with Ministral 3B
  */
 public class BigModelUtil {
-    // Qwen configuration
-    private static final String QWEN_API_KEY = Config.QWEN_API_KEY;
-    private static final String QWEN_BASE_URL = Config.QWEN_BASE_URL;
-    private static final String QWEN_MODEL = Config.QWEN_MODEL;
-    private static final String QWEN_DOC_MODEL = Config.QWEN_DOC_MODEL;
+    // Ollama configuration
+    private static final String OLLAMA_BASE_URL = Config.OLLAMA_BASE_URL;
+    private static final String OLLAMA_MODEL = Config.OLLAMA_MODEL;
 
     private static final Gson gson = new Gson();
 
-    // Qwen text generation
-    public static String qwenTextGeneration(String content) throws Exception {
+    // Ollama text generation
+    public static String ollamaTextGeneration(String content) throws Exception {
         List<Map<String, String>> messages = new ArrayList<>();
         messages.add(createMessage("system", "You are a helpful assistant."));
         messages.add(createMessage("user", content));
 
-        return sendRequest(QWEN_BASE_URL, QWEN_API_KEY, QWEN_MODEL, messages, null);
+        return sendRequest(OLLAMA_BASE_URL, OLLAMA_MODEL, messages);
     }
 
-    // Qwen document understanding
-    public static String qwenDocumentUnderstanding(String content, String filePath) throws Exception {
-        return QwenDoc.kimidoc(filePath, content, QWEN_DOC_MODEL);
+    // Ollama document understanding (uses same API)
+    public static String ollamaDocumentUnderstanding(String content, String filePath) throws Exception {
+        // For now, we'll just use text generation
+        // In the future, we could read the file and pass its content
+        return ollamaTextGeneration(content);
     }
 
     private static Map<String, String> createMessage(String role, String content) {
@@ -44,19 +44,16 @@ public class BigModelUtil {
         return message;
     }
 
-    private static String sendRequest(String baseUrl, String apiKey, String model,
-                                      List<Map<String, String>> messages, Float temperature)
+    private static String sendRequest(String baseUrl, String model,
+                                      List<Map<String, String>> messages)
             throws Exception {
         JsonObject requestBody = new JsonObject();
         requestBody.add("model", gson.toJsonTree(model));
         requestBody.add("messages", gson.toJsonTree(messages));
-        if (temperature != null) {
-            requestBody.add("temperature", gson.toJsonTree(temperature));
-        }
+        requestBody.addProperty("stream", false);
 
-        HttpResponse<String> response = Unirest.post(baseUrl + "/chat/completions")
+        HttpResponse<String> response = Unirest.post(baseUrl + "/api/chat")
                 .header("Content-Type", "application/json")
-                .header("Authorization", "Bearer " + apiKey)
                 .body(requestBody.toString())
                 .asString();
 
@@ -65,17 +62,15 @@ public class BigModelUtil {
 
     private static String parseResponse(String jsonResponse) {
         JsonObject jsonObject = gson.fromJson(jsonResponse, JsonObject.class);
-        return jsonObject.getAsJsonArray("choices")
-                .get(0).getAsJsonObject()
-                .get("message").getAsJsonObject()
+        return jsonObject.getAsJsonObject("message")
                 .get("content").getAsString();
     }
 
-    public static String getQwenApiKey() {
-        return QWEN_API_KEY;
+    public static String getOllamaBaseUrl() {
+        return OLLAMA_BASE_URL;
     }
 
-    public static String getQwenBaseUrl() {
-        return QWEN_BASE_URL;
+    public static String getOllamaModel() {
+        return OLLAMA_MODEL;
     }
 }

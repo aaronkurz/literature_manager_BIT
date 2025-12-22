@@ -1,11 +1,9 @@
 package com.example.utils;
 
 public class Config {
-    // Qwen Configuration - Only LLM needed for local research tool
-    public static final String QWEN_API_KEY = "sk-a10c3a06bb644fbea79f7de18dbf2b9e";
-    public static final String QWEN_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1";
-    public static final String QWEN_MODEL = "qwen-turbo-2024-11-01";
-    public static final String QWEN_DOC_MODEL = "qwen-long";
+    // Ollama Configuration - Local LLM with Ministral 3B
+    public static final String OLLAMA_BASE_URL = System.getenv().getOrDefault("OLLAMA_BASE_URL", "http://localhost:11434");
+    public static final String OLLAMA_MODEL = "ministral:3b";
 
     // MySQL configuration — read from environment variables if available
     public static final String MYSQL_LINK = System.getenv().getOrDefault("MYSQL_URL", "jdbc:mysql://localhost:3306/manager?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8&allowPublicKeyRetrieval=true");

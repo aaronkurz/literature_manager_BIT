@@ -205,15 +205,6 @@ export default {
         }
       });
 
-      // 从Local Storage获取token
-      const xmUser = JSON.parse(localStorage.getItem('xm-user'));
-      if (!xmUser || !xmUser.token) {
-        this.$message.error('未找到用户token，请重新登录');
-        this.isSubmitting = false;
-        return;
-      }
-      formData.append('token', xmUser.token);
-
       try {
         await axios.post('http://localhost:9090/article/upload', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
