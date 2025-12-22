@@ -1,23 +1,24 @@
-# 部分页面
-登录注册
-![图片文字描述](https://github.com/beomyo/literature_manager/blob/main/files/2025-03-13_11-02-27.jpg)
-关键词检索，搜索结果可高亮显示
-![图片文字描述](https://github.com/beomyo/literature_manager/blob/main/files/2025-03-13_11-01-17.jpg)
-具体论文详情，原件和附件来自用户，pdf和docx由服务器处理转换得到，调用python库实现
-论文过长会调用单个模型，较短论文调用三个模型，2+1，2提取1评判，高亮最优结果
-![图片文字描述](https://github.com/beomyo/literature_manager/blob/main/files/2025-03-13_11-01-46.jpg)
-知识图谱，使用Neovis.js渲染，重建图谱会先清除全部节点，重新创建，数据来自mysql
-![图片文字描述](https://github.com/beomyo/literature_manager/blob/main/files/2025-03-13_11-01-56.jpg)
-论文上传
-![图片文字描述](https://github.com/beomyo/literature_manager/blob/main/files/2025-03-13_11-02-00.jpg)
-嵌入neo4j，因为安全性无法直接使用iframe标签嵌入，采用Nginx反向代理neo4j，再将Nginx代理后的地址嵌入，解除限制
-![图片文字描述](https://github.com/beomyo/literature_manager/blob/main/files/2025-03-13_11-02-11.jpg)
-用户论文信息管理，只能看到自己上传的论文
-![图片文字描述](https://github.com/beomyo/literature_manager/blob/main/files/2025-03-13_11-02-17.jpg)
-管理员后台，公告、用户、论文管理
-![图片文字描述](https://github.com/beomyo/literature_manager/blob/main/files/2025-03-13_11-02-37.jpg)
+# Literature Manager - Simplified Local Research Tool
 
----
+A streamlined AI-powered literature management system designed for local research use. This tool helps researchers manage academic papers, extract insights using Qwen LLM, and visualize relationships through a knowledge graph.
+
+## Key Features
+
+- **Paper Management**: Upload and organize academic papers (PDF, CAJ, DOCX formats)
+- **AI-Powered Analysis**: Automatic paper summarization and insight extraction using Qwen LLM
+- **Knowledge Graph**: Visualize relationships between papers using Neo4j
+- **Format Conversion**: Automatic conversion between PDF, DOCX, and TXT formats
+- **Keyword Search**: Search papers by title, author, keywords, and other metadata
+
+## Recent Simplifications
+
+This version has been simplified for local research use:
+
+- ✅ **No User Management**: Removed login/registration - runs as a single-user local tool
+- ✅ **Single Summary Length**: Simplified to one optimal summary length (~50 characters)
+- ✅ **Qwen LLM Only**: Streamlined to use only Qwen for consistency
+- ✅ **No Notifications**: Removed notification system for cleaner experience
+
 ---
 
 ## Run the backend (Docker) 🔧
@@ -52,6 +53,30 @@ Quick steps to run the Vue frontend locally (for development):
 
 Notes:
 - The frontend expects the backend API at `http://localhost:9090` and Neo4j at HTTP `7474` / Bolt `7687` for features such as the Knowledge Graph. You can start the backend and databases with `docker compose up --build -d` (see the Docker section above).
-- The Neo4j Browser requires login (prototype credentials: `neo4j` / `12345678`).
+- The Neo4j Browser requires login (credentials: `neo4j` / `12345678`).
 - For production builds run `npm run build` inside `vue` and serve the generated `dist` with a static server or integrate into the Spring Boot static resources.
+
+---
+
+## System Requirements
+
+- Docker and Docker Compose (for backend services)
+- Node.js 14+ and npm (for frontend development)
+- Qwen API key (configured in `Config.java`)
+
+## Configuration
+
+Key configuration file: `springboot/src/main/java/com/example/utils/Config.java`
+
+- **Qwen API**: Configure your Qwen API key for LLM features
+- **Database**: MySQL and Neo4j connection settings
+- **File Storage**: Upload path configuration
+
+## Architecture
+
+- **Backend**: Spring Boot with MyBatis
+- **Frontend**: Vue.js (optional, can run headless)
+- **Databases**: MySQL (metadata), Neo4j (knowledge graph)
+- **AI/LLM**: Qwen for paper analysis and summarization
+- **File Processing**: Python scripts for PDF/DOCX/TXT conversion
 
