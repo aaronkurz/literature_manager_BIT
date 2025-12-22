@@ -1,27 +1,28 @@
 # Literature Manager - Simplified Local Research Tool
 
-A streamlined AI-powered literature management system designed for local research use. This tool helps researchers manage academic papers, extract insights using **local Ollama LLM (Ministral 3B)**, and visualize relationships through a knowledge graph.
+A streamlined AI-powered literature management system designed for local research use. This tool helps researchers manage academic papers, extract insights using **local Ollama LLM (Mistral 3B)**, and visualize relationships through a knowledge graph.
 
 ## Key Features
 
-- **Paper Management**: Upload and organize academic papers (PDF, CAJ, DOCX formats)
-- **Local AI Processing**: Automatic paper summarization using Ollama with Ministral 3B (3 billion parameter model)
+- **Simple PDF Upload**: Drag-and-drop interface, no manual data entry
+- **Auto-Metadata Extraction**: AI automatically extracts title, authors, abstract, etc.
+- **Local AI Processing**: Paper summarization using Ollama with Mistral 3B (3 billion parameter model)
+- **Processing Status**: Real-time progress tracking with approval workflow
 - **Knowledge Graph**: Visualize relationships between papers using Neo4j
-- **Format Conversion**: Automatic conversion between PDF, DOCX, and TXT formats
-- **Keyword Search**: Search papers by title, author, keywords, and other metadata
 - **No Authentication**: Single-user local tool, no login required
 
-## Recent Simplifications
+## Recent Improvements (Dec 2025)
 
-This version has been simplified for local research use:
+**Fixed Issues:**
+- ✅ **Ollama API Error**: Fixed model name (`mistral:3b` not `ministral:3b`)
+- ✅ **Error Handling**: Added comprehensive logging and troubleshooting
+- ✅ **Context Management**: Truncate large texts for 3B model (~16k chars max)
 
-- ✅ **No User Management**: Removed login/registration - runs as a single-user local tool
-- ✅ **Single Summary Length**: Simplified to one optimal summary length (~50 characters)
-- ✅ **Local AI Only**: Uses Ollama with Ministral 3B instead of online APIs
-- ✅ **No Notifications**: Removed notification system for cleaner experience
-- ✅ **Simplified Frontend**: Settings button replaces user menu
-
----
+**New Features:**
+- ✅ **Simplified Upload**: PDF-only, drag-and-drop, no manual fields
+- ✅ **Processing Status Page**: Real-time progress with step-by-step updates
+- ✅ **Approval Workflow**: Review extracted metadata before saving
+- ✅ **No Attachments**: Removed attachment upload for simplicity
 
 ## Quick Start
 
@@ -39,7 +40,9 @@ This starts:
 - Ollama (port 11434) - local AI service
 - Spring Boot backend (port 9090)
 
-### 2. Pull the Ministral 3B Model
+### 2. Pull the Mistral 3B Model
+
+**IMPORTANT**: The correct model name is `mistral:3b` (not ministral)
 
 After services are running:
 
@@ -50,7 +53,7 @@ After services are running:
 Or manually:
 
 ```bash
-docker exec lm_ollama ollama pull ministral:3b
+docker exec lm_ollama ollama pull mistral:3b
 ```
 
 ### 3. Start the Frontend (Optional)
@@ -64,6 +67,16 @@ npm run serve
 ```
 
 Access at: http://localhost:8080
+
+---
+
+## Usage Workflow
+
+1. **Upload PDF**: Drag-and-drop your PDF file
+2. **Auto Processing**: System extracts metadata and generates summaries
+3. **Review Results**: Check extracted title, authors, abstract
+4. **Approve**: Confirm and save to database
+5. **Explore**: View in knowledge graph
 
 ---
 
@@ -82,7 +95,61 @@ Access at: http://localhost:8080
 - Docker and Docker Compose
 - At least 4GB RAM (for Ollama + services)
 - Node.js 14+ and npm (for frontend development)
-- ~2GB disk space for Ministral 3B model
+- ~2GB disk space for Mistral 3B model
+
+---
+
+## Troubleshooting
+
+### Ollama 404 Error
+
+**Problem**: `POST "/api/chat" - 404 Not Found`
+
+**Solutions**:
+1. Check model is pulled: `docker exec lm_ollama ollama list`
+2. Pull correct model: `docker exec lm_ollama ollama pull mistral:3b`
+3. Check Ollama is running: `docker ps | grep ollama`
+
+### Backend Hangs During Processing
+
+**Problem**: Processing freezes after "将文本上传给Ollama模型"
+
+**Solutions**:
+1. Check Ollama logs: `docker logs lm_ollama -f`
+2. Verify model loaded: `docker exec lm_ollama ollama list`
+3. Check paper size - very large PDFs may timeout
+4. System will truncate text to ~16k chars automatically
+
+### Out of Memory
+
+- Increase Docker memory limit to at least 4GB
+- Mistral 3B requires ~2GB RAM when loaded
+- Consider closing other applications
+
+### Frontend Shows Old UI
+
+- Clear browser cache (Ctrl+Shift+R)
+- Check Vue dev server is running
+- Verify accessing http://localhost:8080
+
+---
+
+## API Endpoints
+
+### Article Management
+- `POST /article/upload` - Upload PDF (simplified, no manual fields)
+- `GET /article/processing-status/:title` - Check processing status
+- `POST /article/approve` - Approve and save metadata
+- `POST /article/search` - Search papers
+- `POST /article/summary/:title` - Get AI summary
+- `POST /article/rebuild` - Rebuild knowledge graph
+
+### Frontend Routes
+- `/front/home` - Search and browse papers
+- `/front/upload` - Upload new papers (simplified)
+- `/front/processing/:title` - View processing status
+- `/front/graph` - View knowledge graph
+- `/front/settings` - System settings
 
 ---
 
@@ -90,10 +157,10 @@ Access at: http://localhost:8080
 
 Key configuration file: `springboot/src/main/java/com/example/utils/Config.java`
 
-- **Ollama**: Configured for local deployment (http://ollama:11434 in Docker)
-- **Database**: MySQL and Neo4j connection settings
-- **File Storage**: Upload path configuration
-- **Model**: Ministral 3B (ministral:3b)
+- **Ollama**: `OLLAMA_BASE_URL` (default: http://localhost:11434)
+- **Model**: `OLLAMA_MODEL` (mistral:3b)
+- **Context Window**: Auto-truncate to ~16k chars for 3B model
+- **Metadata Extraction**: Specialized prompts for PDF parsing
 
 ---
 
@@ -102,54 +169,8 @@ Key configuration file: `springboot/src/main/java/com/example/utils/Config.java`
 - **Backend**: Spring Boot with MyBatis
 - **Frontend**: Vue.js (simplified, no authentication)
 - **Databases**: MySQL (metadata), Neo4j (knowledge graph)
-- **AI/LLM**: Ollama with Ministral 3B (local, no API keys needed)
-- **File Processing**: Python scripts for PDF/DOCX/TXT conversion
-
----
-
-## Data Persistence
-
-All data is persisted in Docker volumes:
-- `db_data` - MySQL database
-- `neo4j_data` - Neo4j graph database
-- `ollama_data` - Ollama models
-- `uploads` - Uploaded paper files
-
----
-
-## API Endpoints
-
-### Article Management
-- `POST /article/upload` - Upload paper
-- `POST /article/search` - Search papers
-- `GET /article/file-paths/{title}` - Get file paths
-- `POST /article/summary/{title}` - Get AI summary
-- `POST /article/rebuild` - Rebuild knowledge graph
-
-### Frontend Routes
-- `/front/home` - Search and browse papers
-- `/front/upload` - Upload new papers
-- `/front/graph` - View knowledge graph
-- `/front/settings` - System settings
-
----
-
-## Troubleshooting
-
-**Ollama model not found?**
-```bash
-docker exec lm_ollama ollama pull ministral:3b
-```
-
-**Frontend 404 error on load?**
-- This has been fixed - authentication removed from frontend
-
-**Out of memory?**
-- Increase Docker memory limit to at least 4GB
-- Consider using a smaller model if needed
-
-**Knowledge graph not updating?**
-- Use `/article/rebuild` endpoint to manually rebuild
+- **AI/LLM**: Ollama with Mistral 3B (local, no API keys)
+- **File Processing**: Python scripts for PDF/TXT conversion
 
 ---
 
@@ -169,12 +190,20 @@ npm install
 npm run serve
 ```
 
-### Build for Production
+### Pull Latest Model
 ```bash
-cd vue
-npm run build
-# Dist files can be served via Spring Boot static resources
+docker exec lm_ollama ollama pull mistral:3b
 ```
+
+---
+
+## Data Persistence
+
+All data is persisted in Docker volumes:
+- `db_data` - MySQL database
+- `neo4j_data` - Neo4j graph database
+- `ollama_data` - Ollama models
+- `uploads` - Uploaded paper files
 
 ---
 
