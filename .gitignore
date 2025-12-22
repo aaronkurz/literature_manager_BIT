@@ -1,0 +1,15 @@
+# Ignore downloaded Python wheels included for offline installs
+/docker/wheels/
+/springboot/wheels/
+
+# Ignore Vue dependencies and build output
+/vue/node_modules/
+/vue/dist/
+
+# Lockfile (ignore if you prefer to track lockfiles at root)
+/package-lock.json
+**/package-lock.json
+
+# OS / editor
+.DS_Store
+*.log

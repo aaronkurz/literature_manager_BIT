@@ -6,6 +6,7 @@ import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
+import java.nio.charset.StandardCharsets;
 
 import static com.example.utils.Config.*;
 
@@ -63,7 +64,7 @@ public class Pdf2txt {
 
     private static String[] buildPythonCommand(File inputDir, File outputDir, File pytesseractDir) {
         return new String[]{
-                "python",
+                "python3",
                 "-u",
                 PY_SCRIPT, // 直接使用 PY_SCRIPT 绝对路径
                 "--input_dir", inputDir.getAbsolutePath(),
@@ -93,7 +94,7 @@ public class Pdf2txt {
     private static void startOutputLogger(Process process, File logDir) {
         new Thread(() -> {
             try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(process.getInputStream(), "GBK"))) {
+                    new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     log(logDir.getAbsolutePath(), "[PY] " + line);
