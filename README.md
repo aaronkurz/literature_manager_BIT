@@ -36,3 +36,22 @@ Quick overview:
 	- Uploads are stored at `/manager/upload` inside the app container (mapped to Docker volume `uploads` by default). To view files directly on the host, map that volume to a host path in `docker-compose.yml`.
 
 See `docker/README.md` for details on changing credentials, viewing logs, and triggering the knowledge-graph rebuild.
+
+---
+
+## Run the frontend (local dev) 🖥️
+
+Quick steps to run the Vue frontend locally (for development):
+
+- Prerequisites: Node.js and npm (or yarn).
+- From the project root:
+  1. cd vue
+  2. npm install
+  3. npm run serve
+- Open the URL shown in the terminal (the dev server usually runs on http://localhost:8080).
+
+Notes:
+- The frontend expects the backend API at `http://localhost:9090` and Neo4j at HTTP `7474` / Bolt `7687` for features such as the Knowledge Graph. You can start the backend and databases with `docker compose up --build -d` (see the Docker section above).
+- The Neo4j Browser requires login (prototype credentials: `neo4j` / `12345678`).
+- For production builds run `npm run build` inside `vue` and serve the generated `dist` with a static server or integrate into the Spring Boot static resources.
+

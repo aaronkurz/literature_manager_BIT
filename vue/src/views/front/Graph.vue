@@ -64,6 +64,18 @@
               </el-col>
             </el-row>
           </el-card>
+
+          <!-- Neo4j Browser Link -->
+          <el-card class="control-card" shadow="hover">
+            <h3 slot="header">Neo4j Browser</h3>
+            <p>The Neo4j Browser cannot be embedded. Open it in a new tab:</p>
+            <p><strong>URL:</strong> <a href="http://localhost:7474/browser/" target="_blank" rel="noopener">http://localhost:7474/browser/</a></p>
+            <p><strong>Credentials (prototype):</strong> username: <code>neo4j</code>, password: <code>12345678</code></p>
+            <div style="text-align:right;">
+              <el-button type="primary" @click="openNeo4jBrowser">Open</el-button>
+            </div>
+          </el-card>
+
         </div>
       </el-aside>
     </el-container>
@@ -197,6 +209,9 @@ export default {
       }).catch(() => {
         this.$message.info('已取消重建');
       });
+    },
+    openNeo4jBrowser() {
+      window.open('http://localhost:7474/browser/', '_blank', 'noopener');
     }
   }
 };

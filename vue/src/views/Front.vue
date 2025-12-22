@@ -14,7 +14,6 @@
             <el-menu-item index="/front/home">搜索</el-menu-item>
             <el-menu-item index="/front/upload">论文上传</el-menu-item>
             <!-- FrontLayout.vue 中的菜单项 -->
-            <el-menu-item index="/front/neo4j">Neo4j</el-menu-item>
 <!--            <el-menu-item  @click.native.prevent="openExternalLink">Neo4j</el-menu-item>-->
           </el-menu>
         </div>
