@@ -1,9 +1,9 @@
 package com.example.utils;
 
 public class Config {
-    // Ollama Configuration - Local LLM with Ministral 3B
+    // Ollama Configuration - Local LLM with Mistral 3B (note: it's "mistral" not "ministral")
     public static final String OLLAMA_BASE_URL = System.getenv().getOrDefault("OLLAMA_BASE_URL", "http://localhost:11434");
-    public static final String OLLAMA_MODEL = "ministral:3b";
+    public static final String OLLAMA_MODEL = "mistral:3b";
 
     // MySQL configuration — read from environment variables if available
     public static final String MYSQL_LINK = System.getenv().getOrDefault("MYSQL_URL", "jdbc:mysql://localhost:3306/manager?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8&allowPublicKeyRetrieval=true");
@@ -36,8 +36,23 @@ public class Config {
     public static final String OCR_PATH = System.getenv().getOrDefault("OCR_PATH", "/usr/bin");
     public static final String LOG_PATH = System.getenv().getOrDefault("LOG_PATH", "/app/log");
 
+    // Simplified JSON prompt for metadata extraction from academic papers
+    public static final String METADATA_EXTRACTION_JSON = """
+            {
+            "title": "论文的完整标题",
+            "author": "作者姓名，多个作者用分号分隔",
+            "organ": "作者单位/机构",
+            "year": "发表年份，仅数字",
+            "pubTime": "发表时间，格式YYYY-MM-DD",
+            "source": "期刊或会议名称",
+            "keyword": "关键词，用分号分隔",
+            "summary": "论文摘要，完整提取",
+            "doi": "DOI编号（如果有）",
+            "pageCount": "页数"
+            }""";
+
     // Simplified JSON prompt for single summary length (mid-length ~50 chars)
-    public static final String JSON = """
+    public static final String SUMMARY_JSON = """
             {
             "summary1": "第1种对论文摘要的总结凝练，50字左右",
             "summary2": "第2种对论文摘要的总结凝练，50字左右",

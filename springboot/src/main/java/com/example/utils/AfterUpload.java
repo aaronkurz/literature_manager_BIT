@@ -87,25 +87,26 @@ public class AfterUpload {
             if (!new File(cajpath).exists() && !new File(pdfpath).exists()) {
                 // Document file upload - use Ollama document understanding
                 try {
-                    System.out.println("将文档上传给Ollama模型(Ministral 3B),会花几十秒");
-                    LogUtil_AfterUpload.log("将文档上传给Ollama模型(Ministral 3B),会花几十秒");
+                    System.out.println("将文档上传给Ollama模型(Mistral 3B),会花几十秒");
+                    LogUtil_AfterUpload.log("将文档上传给Ollama模型(Mistral 3B),会花几十秒");
                     String exist = new File(docpath).exists() ? docpath : docxpath;
-                    String ollamaRes = BigModelUtil.ollamaDocumentUnderstanding(Config.JSON + s, exist);
+                    String ollamaRes = BigModelUtil.ollamaDocumentUnderstanding(Config.SUMMARY_JSON + s, exist);
                     saveSummary(Config.OLLAMA_MODEL, articleInfo.getTitle(), ollamaRes, "0");
                     System.out.println("Ollama模型处理完毕,已经结果存入数据库,使用的模型是" + Config.OLLAMA_MODEL);
                     LogUtil_AfterUpload.log("Ollama模型处理完毕,已经结果存入数据库,使用的模型是" + Config.OLLAMA_MODEL);
                 } catch (Exception e) {
                     System.out.println("调用失败" + e.getMessage());
                     LogUtil_AfterUpload.log("调用失败" + e.getMessage());
+                    e.printStackTrace();
                 }
             } else {
                 // Text upload - use Ollama text generation
                 try {
                     String content = new String(Files.readAllBytes(Paths.get(txtpath)));
-                    System.out.println("将文本上传给Ollama模型(Ministral 3B),会花几十秒，当前论文字符长度: " + content.length());
-                    LogUtil_AfterUpload.log("将文本上传给Ollama模型(Ministral 3B),会花几十秒，当前论文字符长度: " + content.length());
+                    System.out.println("将文本上传给Ollama模型(Mistral 3B),会花几十秒，当前论文字符长度: " + content.length());
+                    LogUtil_AfterUpload.log("将文本上传给Ollama模型(Mistral 3B),会花几十秒，当前论文字符长度: " + content.length());
                     
-                    String ollamaRes = BigModelUtil.ollamaTextGeneration(content + Config.JSON + s);
+                    String ollamaRes = BigModelUtil.ollamaTextGeneration(content + Config.SUMMARY_JSON + s);
                     saveSummary(Config.OLLAMA_MODEL, articleInfo.getTitle(), ollamaRes, "0");
                     
                     System.out.println("Ollama模型处理完毕,已将结果存入数据库,使用的模型是:" + Config.OLLAMA_MODEL);
@@ -113,7 +114,11 @@ public class AfterUpload {
                 } catch (IOException e) {
                     System.out.println("调用失败" + e.getMessage());
                     LogUtil_AfterUpload.log("调用失败" + e.getMessage());
+                    e.printStackTrace();
                 } catch (Exception e) {
+                    System.out.println("调用失败" + e.getMessage());
+                    LogUtil_AfterUpload.log("调用失败" + e.getMessage());
+                    e.printStackTrace();
                     throw new RuntimeException(e);
                 }
             }
