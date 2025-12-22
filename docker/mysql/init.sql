@@ -55,6 +55,32 @@ CREATE TABLE IF NOT EXISTS article_summary (
   ifteacher INT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- processing_status table (tracks paper processing workflow)
+CREATE TABLE IF NOT EXISTS processing_status (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  task_id VARCHAR(64) UNIQUE NOT NULL,
+  file_name VARCHAR(512),
+  status VARCHAR(32) NOT NULL,
+  progress INT DEFAULT 0,
+  current_step VARCHAR(255),
+  error_message TEXT,
+  extracted_title VARCHAR(1024),
+  extracted_authors TEXT,
+  extracted_institution VARCHAR(255),
+  extracted_year VARCHAR(16),
+  extracted_source VARCHAR(255),
+  extracted_keywords TEXT,
+  extracted_doi VARCHAR(255),
+  extracted_abstract TEXT,
+  extracted_summary TEXT,
+  file_path VARCHAR(1024),
+  created_time DATETIME,
+  updated_time DATETIME,
+  completed_time DATETIME,
+  INDEX idx_task_id (task_id),
+  INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Example sample data (optional)
 INSERT INTO article_info (title, author, summary, pubtime)
 VALUES ('Sample Article', 'Test Author', 'This is a sample article for the local research tool.', '2025-01-01')

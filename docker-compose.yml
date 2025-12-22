@@ -35,6 +35,8 @@ services:
     volumes:
       - ollama_data:/root/.ollama
     restart: unless-stopped
+    command: >
+      bash -c "ollama serve & sleep 10 && ollama pull ministral-3:3b && wait"
 
   app:
     build:
