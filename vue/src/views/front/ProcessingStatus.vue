@@ -10,7 +10,6 @@
       <el-step title="上传文件" description="文件已上传"></el-step>
       <el-step title="格式转换" description="转换为PDF/TXT"></el-step>
       <el-step title="提取元数据" description="使用AI提取信息"></el-step>
-      <el-step title="AI分析" description="生成摘要"></el-step>
       <el-step title="等待审核" description="确认信息"></el-step>
     </el-steps>
 
@@ -61,10 +60,7 @@
           <el-input v-model="editableMetadata.doi"></el-input>
         </el-form-item>
         <el-form-item label="摘要">
-          <el-input v-model="editableMetadata.summary" type="textarea" :rows="4"></el-input>
-        </el-form-item>
-        <el-form-item label="AI摘要">
-          <el-input v-model="status.extractedSummary" type="textarea" :rows="3" disabled></el-input>
+          <el-input v-model="editableMetadata.summary" type="textarea" :rows="6"></el-input>
         </el-form-item>
       </el-form>
 
@@ -137,9 +133,8 @@ export default {
         'UPLOADING': 0,
         'CONVERTING': 1,
         'EXTRACTING': 2,
-        'ANALYZING': 3,
-        'PENDING_APPROVAL': 4,
-        'APPROVED': 5,
+        'PENDING_APPROVAL': 3,
+        'APPROVED': 4,
         'REJECTED': 0,
         'FAILED': 0
       };

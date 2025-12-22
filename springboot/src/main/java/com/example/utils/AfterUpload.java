@@ -100,28 +100,18 @@ public class AfterUpload {
             System.out.println("元数据提取完成:");
             System.out.println("  标题: " + status.getExtractedTitle());
             System.out.println("  作者: " + status.getExtractedAuthors());
+            System.out.println("  摘要: " + status.getExtractedAbstract());
             
-            // Update status: Analyzing with AI
-            status.setStatus("ANALYZING");
-            status.setProgress(70);
-            status.setCurrentStep("正在使用AI分析论文内容...");
-            processingStatusService.updateStatus(status);
-            
-            // Generate summary using Ollama (first 12000 chars for context)
-            String summaryText = content.length() > 12000 ? content.substring(0, 12000) : content;
-            System.out.println("调用Ollama生成摘要 (输入长度: " + summaryText.length() + " 字符)");
-            JsonObject summaryJson = generateSummary(summaryText);
-            status.setExtractedSummary(getStringValue(summaryJson, "summary1"));
-            
-            System.out.println("AI摘要生成完成");
+            // Use the extracted abstract as the summary (no need for second AI call)
+            status.setExtractedSummary(status.getExtractedAbstract());
             
             // Update status: Pending approval
             status.setStatus("PENDING_APPROVAL");
-            status.setProgress(90);
+            status.setProgress(100);
             status.setCurrentStep("提取完成，等待用户审核...");
             processingStatusService.updateStatus(status);
             
-            System.out.println("=== 处理完成，等待用户审核 ===");
+            System.out.println("=== 元数据提取完成，等待用户审核 ===");
             
         } catch (Exception e) {
             status.setStatus("FAILED");
@@ -156,21 +146,7 @@ public class AfterUpload {
         return parseJsonSafely(response);
     }
     
-    /**
-     * Generate summary from paper content using Ollama
-     */
-    private JsonObject generateSummary(String content) throws Exception {
-        String prompt = "你是一个学术论文分析专家。请对下面的论文内容生成一个简洁的摘要(约200字)，并严格按照以下JSON格式返回，不要添加任何Markdown标记或额外说明：\n\n" +
-            "{\n" +
-            "  \"summary1\": \"论文摘要内容\"\n" +
-            "}\n\n" +
-            "现在开始分析以下论文：\n\n" +
-            content;
-        
-        String response = BigModelUtil.ollamaTextGeneration(prompt);
-        return parseJsonSafely(response);
-    }
-    
+
     /**
      * Safely parse JSON from Ollama response, handling various formats
      */
