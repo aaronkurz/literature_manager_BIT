@@ -6,6 +6,9 @@ import com.google.gson.JsonObject;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
 
+import java.net.SocketTimeoutException;
+import java.time.Duration;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,23 +22,38 @@ public class BigModelUtil {
     private static final String OLLAMA_BASE_URL = Config.OLLAMA_BASE_URL;
     private static final String OLLAMA_MODEL = Config.OLLAMA_MODEL;
 
+    // Request/runtime tuning to reduce local resource pressure
+    private static final int MAX_INPUT_CHARS = Integer.parseInt(System.getenv().getOrDefault("OLLAMA_MAX_INPUT_CHARS", "32000"));
+    private static final int FALLBACK_INPUT_CHARS = Integer.parseInt(System.getenv().getOrDefault("OLLAMA_FALLBACK_INPUT_CHARS", "12000"));
+    private static final int SOCKET_TIMEOUT_MS = (int) Duration.ofMinutes(8).toMillis();
+    private static final int CONNECT_TIMEOUT_MS = (int) Duration.ofSeconds(30).toMillis();
+
+    static {
+        // Allow long-running generations without failing fast on slow hardware
+        Unirest.setTimeouts(CONNECT_TIMEOUT_MS, SOCKET_TIMEOUT_MS);
+    }
+
     private static final Gson gson = new Gson();
 
     // Ollama text generation with context management
     public static String ollamaTextGeneration(String content) throws Exception {
         // Ministral-3 has 256K context window, but for efficiency on 3B model,
         // we still limit to avoid very long processing times on end-user hardware
-        int maxChars = 32000; // ~8000 tokens - conservative for 3B model
-        if (content.length() > maxChars) {
-            System.out.println("警告: 文本过长(" + content.length() + "字符), 截取前" + maxChars + "字符处理");
-            content = content.substring(0, maxChars) + "\n...(内容已截断)";
+        String primaryContent = truncateContent(content, MAX_INPUT_CHARS);
+        List<Map<String, String>> messages = buildMessages(primaryContent);
+
+        try {
+            return sendRequest(OLLAMA_BASE_URL, OLLAMA_MODEL, messages);
+        } catch (SocketTimeoutException timeout) {
+            // Fallback: retry with a smaller prompt to ease load and avoid timeouts
+            if (primaryContent.length() <= FALLBACK_INPUT_CHARS) {
+                throw timeout;
+            }
+
+            String fallbackContent = truncateContent(primaryContent, FALLBACK_INPUT_CHARS);
+            System.err.println("初次调用超时，使用精简上下文重试 (" + fallbackContent.length() + " 字符)");
+            return sendRequest(OLLAMA_BASE_URL, OLLAMA_MODEL, buildMessages(fallbackContent));
         }
-
-        List<Map<String, String>> messages = new ArrayList<>();
-        messages.add(createMessage("system", "You are a helpful assistant specializing in academic paper analysis. Always respond in JSON format."));
-        messages.add(createMessage("user", content));
-
-        return sendRequest(OLLAMA_BASE_URL, OLLAMA_MODEL, messages);
     }
 
     // Extract metadata from PDF text
@@ -56,6 +74,17 @@ public class BigModelUtil {
     public static String ollamaDocumentUnderstanding(String content, String filePath) throws Exception {
         // For now, we'll just use text generation
         return ollamaTextGeneration(content);
+    }
+
+    private static List<Map<String, String>> buildMessages(String content) {
+        List<Map<String, String>> messages = new ArrayList<>();
+        messages.add(createMessage("system",
+                "You are an assistant that must return ONLY a valid JSON object. " +
+                "Output rules: (1) return a single JSON object, not an array; (2) no Markdown fences or prose; " +
+                "(3) if a value is unknown, use an empty string; (4) keys must match the provided template exactly; " +
+                "(5) content must be UTF-8 and parseable by Gson."));
+        messages.add(createMessage("user", content));
+        return messages;
     }
 
     private static Map<String, String> createMessage(String role, String content) {
@@ -96,6 +125,14 @@ public class BigModelUtil {
             System.err.println("3. URL正确: " + baseUrl);
             throw e;
         }
+    }
+
+    private static String truncateContent(String content, int maxChars) {
+        if (content.length() <= maxChars) {
+            return content;
+        }
+        System.out.println("警告: 文本过长(" + content.length() + "字符), 截取前" + maxChars + "字符处理");
+        return content.substring(0, maxChars) + "\n...(内容已截断)";
     }
 
     private static String parseResponse(String jsonResponse) {

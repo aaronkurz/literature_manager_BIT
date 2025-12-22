@@ -4,9 +4,12 @@ import com.example.entity.ArticleInfo;
 import com.example.entity.ProcessingStatus;
 import com.example.service.ArticleService;
 import com.example.service.impl.ProcessingStatusService;
+import com.example.utils.docling.DoclingExtractor;
 import com.example.utils.bigmodel.BigModelUtil;
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -62,6 +65,7 @@ public class AfterUpload {
             }
             runPdfToDocx();
             runpdf2txt();
+            String doclingJsonPath = DoclingExtractor.runDocling(pdfpath);
             
             System.out.println("文件格式转换完成");
             
@@ -71,20 +75,21 @@ public class AfterUpload {
             status.setCurrentStep("正在提取论文元数据...");
             processingStatusService.updateStatus(status);
             
-            // Read text content
+            // Read text content (fallback) and build docling-condensed context
             String content = "";
             if (new File(txtpath).exists()) {
                 content = new String(Files.readAllBytes(Paths.get(txtpath)));
                 System.out.println("文本内容长度: " + content.length());
             }
-            
             if (content.isEmpty()) {
                 throw new Exception("无法提取文本内容");
             }
+
+            String llmContext = buildDoclingContext(doclingJsonPath, content);
             
             // Extract metadata using Ollama
-            String metadataResult = extractMetadata(content);
-            JsonObject metadata = gson.fromJson(metadataResult, JsonObject.class);
+            String metadataResult = extractMetadata(llmContext);
+            JsonObject metadata = parseJsonObjectSafe(metadataResult);
             
             // Store extracted metadata in status
             status.setExtractedTitle(getStringOrDefault(metadata, "title", "未提取"));
@@ -103,8 +108,8 @@ public class AfterUpload {
             processingStatusService.updateStatus(status);
             
             // Generate summary using Ollama
-            String summaryResult = generateSummary(content);
-            JsonObject summaryJson = gson.fromJson(summaryResult, JsonObject.class);
+            String summaryResult = generateSummary(llmContext);
+            JsonObject summaryJson = parseJsonObjectSafe(summaryResult);
             status.setExtractedSummary(getStringOrDefault(summaryJson, "summary1", "未生成"));
             
             // Update status: Pending approval
@@ -142,8 +147,8 @@ public class AfterUpload {
      */
     private String extractMetadata(String content) throws Exception {
         String prompt = Config.METADATA_EXTRACTION_JSON + 
-            "\n请从以下论文内容中提取元数据，以JSON格式返回:\n" + 
-            content.substring(0, Math.min(content.length(), 16000)); // Limit to 16K chars
+            "\n请从以下论文内容中提取元数据，并严格以JSON对象返回，键名必须与模板一致，不要添加额外字段或文本。未知字段置为空字符串。严禁输出Markdown或额外说明。\n" + 
+            content.substring(0, Math.min(content.length(), 12000)); // Trim to reduce LLM load
         
         return BigModelUtil.ollamaTextGeneration(prompt);
     }
@@ -153,8 +158,8 @@ public class AfterUpload {
      */
     private String generateSummary(String content) throws Exception {
         String prompt = Config.SUMMARY_JSON + 
-            "\n请对以下论文内容生成摘要:\n" + 
-            content.substring(0, Math.min(content.length(), 16000)); // Limit to 16K chars
+            "\n请对以下论文内容生成摘要，并严格以JSON对象返回，键名必须与模板一致，不要添加额外字段或文本。未知字段置为空字符串。严禁输出Markdown或额外说明。\n" + 
+            content.substring(0, Math.min(content.length(), 12000)); // Trim to reduce LLM load
         
         return BigModelUtil.ollamaTextGeneration(prompt);
     }
@@ -215,6 +220,103 @@ public class AfterUpload {
         json.addProperty("weekpoint", "");
         json.addProperty("keyword", status.getExtractedKeywords() != null ? status.getExtractedKeywords() : "");
         return gson.toJson(json);
+    }
+
+    /**
+     * Build a condensed context for the LLM using docling output if available; otherwise fallback to raw text.
+     */
+    private String buildDoclingContext(String doclingJsonPath, String fallbackText) {
+        if (doclingJsonPath != null && new File(doclingJsonPath).exists()) {
+            try {
+                String raw = Files.readString(Paths.get(doclingJsonPath));
+                JsonObject obj = JsonParser.parseString(raw).getAsJsonObject();
+                StringBuilder sb = new StringBuilder();
+                appendField(sb, "Title", getStringOrDefault(obj, "title", ""));
+                appendField(sb, "Authors", String.join("; ", getAuthors(obj)));
+                appendField(sb, "Abstract", getStringOrDefault(obj, "abstract", ""));
+                appendField(sb, "Introduction", getStringOrDefault(obj, "introduction", ""));
+                appendField(sb, "Conclusion", getStringOrDefault(obj, "conclusion", ""));
+
+                if (obj.has("sections") && obj.get("sections").isJsonArray()) {
+                    obj.get("sections").getAsJsonArray().forEach(secElem -> {
+                        try {
+                            JsonObject sec = secElem.getAsJsonObject();
+                            String title = getStringOrDefault(sec, "title", "");
+                            String para = getStringOrDefault(sec, "first_paragraph", "");
+                            if (!title.isEmpty() && !para.isEmpty()) {
+                                sb.append("Section: ").append(title).append("\n");
+                                sb.append("First paragraph: ").append(para).append("\n\n");
+                            }
+                        } catch (Exception ignored) {
+                        }
+                    });
+                }
+
+                // Add a small markdown head if present
+                appendField(sb, "Markdown head", getStringOrDefault(obj, "markdown_head", ""));
+
+                String condensed = sb.toString();
+                int maxLen = 12000;
+                if (condensed.length() > maxLen) {
+                    return condensed.substring(0, maxLen) + "\n...(内容已截断)";
+                }
+                return condensed;
+            } catch (Exception e) {
+                System.out.println("Docling context构建失败，使用原始文本: " + e.getMessage());
+            }
+        }
+
+        // Fallback to truncated raw text
+        int maxLen = 12000;
+        if (fallbackText.length() > maxLen) {
+            return fallbackText.substring(0, maxLen) + "\n...(内容已截断)";
+        }
+        return fallbackText;
+    }
+
+    private void appendField(StringBuilder sb, String label, String value) {
+        if (value != null && !value.isEmpty()) {
+            sb.append(label).append(": ").append(value).append("\n\n");
+        }
+    }
+
+    private String[] getAuthors(JsonObject obj) {
+        try {
+            if (obj.has("authors") && obj.get("authors").isJsonArray()) {
+                return gson.fromJson(obj.get("authors"), String[].class);
+            }
+        } catch (Exception ignored) {
+        }
+        return new String[]{};
+    }
+
+    // Defensive JSON parsing: handles plain strings or nested JSON strings
+    private JsonObject parseJsonObjectSafe(String content) {
+        try {
+            JsonElement element = JsonParser.parseString(content);
+            if (element.isJsonObject()) {
+                return element.getAsJsonObject();
+            }
+            if (element.isJsonPrimitive()) {
+                String inner = element.getAsString();
+                try {
+                    JsonElement innerElement = JsonParser.parseString(inner);
+                    if (innerElement.isJsonObject()) {
+                        return innerElement.getAsJsonObject();
+                    }
+                } catch (Exception ignored) {
+                    // Fall through to wrapping raw content
+                }
+                JsonObject fallback = new JsonObject();
+                fallback.addProperty("raw", inner);
+                return fallback;
+            }
+        } catch (Exception ignored) {
+            // Fall through to wrapping raw content
+        }
+        JsonObject fallback = new JsonObject();
+        fallback.addProperty("raw", content);
+        return fallback;
     }
     
     /**
