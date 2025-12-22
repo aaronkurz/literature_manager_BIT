@@ -34,8 +34,6 @@ public class Config {
     //pdf2txt配置
     public static final String PDF2TXT_PY_SCRIPT = System.getenv().getOrDefault("PDF2TXT_PY_SCRIPT", "/app/scripts/pdf_to_text.py");
     public static final int PDF2TXT_TIMEOUT_MINUTES = Integer.parseInt(System.getenv().getOrDefault("PDF2TXT_TIMEOUT_MINUTES", "30"));
-        public static final String DOCLING_PY_SCRIPT = System.getenv().getOrDefault("DOCLING_PY_SCRIPT", "/app/scripts/docling_extract.py");
-        public static final int DOCLING_TIMEOUT_MINUTES = Integer.parseInt(System.getenv().getOrDefault("DOCLING_TIMEOUT_MINUTES", "10"));
     public static final String OCR_PATH = System.getenv().getOrDefault("OCR_PATH", "/usr/bin");
     public static final String LOG_PATH = System.getenv().getOrDefault("LOG_PATH", "/app/log");
 

@@ -2,4 +2,3 @@ pytesseract==0.3.13
 pymupdf==1.26.7
 pillow==11.0.0
 pdf2docx==0.5.8
-docling==2.65.0

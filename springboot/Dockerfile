@@ -27,7 +27,6 @@ COPY src/main/resources/scripts /app/scripts
 RUN chmod +x /app/scripts/*.py
 ENV PDF2TXT_PY_SCRIPT=/app/scripts/pdf_to_text.py \
     PDF2DOCX_PY_SCRIPT=/app/scripts/pdf_converter.py \
-  DOCLING_PY_SCRIPT=/app/scripts/docling_extract.py \
     OCR_PATH=/usr/bin \
     LOG_PATH=/app/log
 

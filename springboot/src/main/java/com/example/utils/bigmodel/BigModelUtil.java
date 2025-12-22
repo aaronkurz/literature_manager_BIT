@@ -6,155 +6,130 @@ import com.google.gson.JsonObject;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
 
-import java.net.SocketTimeoutException;
 import java.time.Duration;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * LLM utility - uses local Ollama with Mistral 3B
+ * LLM utility - uses local Ollama with Ministral-3:3b
+ * Optimized for speed and accuracy on end-user hardware
  */
 public class BigModelUtil {
-    // Ollama configuration
     private static final String OLLAMA_BASE_URL = Config.OLLAMA_BASE_URL;
     private static final String OLLAMA_MODEL = Config.OLLAMA_MODEL;
-
-    // Request/runtime tuning to reduce local resource pressure
-    private static final int MAX_INPUT_CHARS = Integer.parseInt(System.getenv().getOrDefault("OLLAMA_MAX_INPUT_CHARS", "32000"));
-    private static final int FALLBACK_INPUT_CHARS = Integer.parseInt(System.getenv().getOrDefault("OLLAMA_FALLBACK_INPUT_CHARS", "12000"));
-    private static final int SOCKET_TIMEOUT_MS = (int) Duration.ofMinutes(8).toMillis();
-    private static final int CONNECT_TIMEOUT_MS = (int) Duration.ofSeconds(30).toMillis();
-
+    
+    // Reduced timeout for faster failure detection (3 minutes max)
+    private static final int SOCKET_TIMEOUT_MS = (int) Duration.ofMinutes(3).toMillis();
+    private static final int CONNECT_TIMEOUT_MS = (int) Duration.ofSeconds(15).toMillis();
+    
     static {
-        // Allow long-running generations without failing fast on slow hardware
         Unirest.setTimeouts(CONNECT_TIMEOUT_MS, SOCKET_TIMEOUT_MS);
     }
-
+    
     private static final Gson gson = new Gson();
-
-    // Ollama text generation with context management
+    
+    /**
+     * Generate text using Ollama
+     */
     public static String ollamaTextGeneration(String content) throws Exception {
-        // Ministral-3 has 256K context window, but for efficiency on 3B model,
-        // we still limit to avoid very long processing times on end-user hardware
-        String primaryContent = truncateContent(content, MAX_INPUT_CHARS);
-        List<Map<String, String>> messages = buildMessages(primaryContent);
-
-        try {
-            return sendRequest(OLLAMA_BASE_URL, OLLAMA_MODEL, messages);
-        } catch (SocketTimeoutException timeout) {
-            // Fallback: retry with a smaller prompt to ease load and avoid timeouts
-            if (primaryContent.length() <= FALLBACK_INPUT_CHARS) {
-                throw timeout;
-            }
-
-            String fallbackContent = truncateContent(primaryContent, FALLBACK_INPUT_CHARS);
-            System.err.println("初次调用超时，使用精简上下文重试 (" + fallbackContent.length() + " 字符)");
-            return sendRequest(OLLAMA_BASE_URL, OLLAMA_MODEL, buildMessages(fallbackContent));
-        }
-    }
-
-    // Extract metadata from PDF text
-    public static String extractMetadata(String pdfText) throws Exception {
-        // Truncate to first ~8000 chars which usually contains title, abstract, authors
-        int maxChars = 8000;
-        String relevantText = pdfText.length() > maxChars ? pdfText.substring(0, maxChars) : pdfText;
-        
-        String prompt = "从以下学术论文文本中提取元数据。请严格按照JSON格式返回:\n\n" + 
-                       Config.METADATA_EXTRACTION_JSON + 
-                       "\n\n论文文本:\n" + relevantText +
-                       "\n\n请仅返回JSON，不要有其他说明文字。";
-        
-        return ollamaTextGeneration(prompt);
-    }
-
-    // Ollama document understanding (uses same API)
-    public static String ollamaDocumentUnderstanding(String content, String filePath) throws Exception {
-        // For now, we'll just use text generation
-        return ollamaTextGeneration(content);
-    }
-
-    private static List<Map<String, String>> buildMessages(String content) {
         List<Map<String, String>> messages = new ArrayList<>();
-        messages.add(createMessage("system",
-                "You are an assistant that must return ONLY a valid JSON object. " +
-                "Output rules: (1) return a single JSON object, not an array; (2) no Markdown fences or prose; " +
-                "(3) if a value is unknown, use an empty string; (4) keys must match the provided template exactly; " +
-                "(5) content must be UTF-8 and parseable by Gson."));
-        messages.add(createMessage("user", content));
-        return messages;
+        
+        // System message for JSON output
+        Map<String, String> systemMsg = new HashMap<>();
+        systemMsg.put("role", "system");
+        systemMsg.put("content", 
+            "You are a helpful assistant that always responds with valid JSON. " +
+            "Never use markdown code blocks (```json). " +
+            "Always return a single JSON object, not an array. " +
+            "Use empty strings \"\" for unknown values.");
+        messages.add(systemMsg);
+        
+        // User message
+        Map<String, String> userMsg = new HashMap<>();
+        userMsg.put("role", "user");
+        userMsg.put("content", content);
+        messages.add(userMsg);
+        
+        return sendRequest(messages);
     }
-
-    private static Map<String, String> createMessage(String role, String content) {
-        Map<String, String> message = new HashMap<>();
-        message.put("role", role);
-        message.put("content", content);
-        return message;
-    }
-
-    private static String sendRequest(String baseUrl, String model,
-                                      List<Map<String, String>> messages)
-            throws Exception {
+    
+    /**
+     * Send request to Ollama API
+     */
+    private static String sendRequest(List<Map<String, String>> messages) throws Exception {
         JsonObject requestBody = new JsonObject();
-        requestBody.add("model", gson.toJsonTree(model));
+        requestBody.add("model", gson.toJsonTree(OLLAMA_MODEL));
         requestBody.add("messages", gson.toJsonTree(messages));
         requestBody.addProperty("stream", false);
-
-        System.out.println("正在调用Ollama API: " + baseUrl + "/api/chat");
-        System.out.println("使用模型: " + model);
+        
+        // Performance options for 3B model
+        JsonObject options = new JsonObject();
+        options.addProperty("temperature", 0.7);
+        options.addProperty("top_p", 0.9);
+        options.addProperty("num_predict", 2048); // Max tokens to generate
+        requestBody.add("options", options);
+        
+        System.out.println("调用Ollama API: " + OLLAMA_BASE_URL + "/api/chat");
+        System.out.println("模型: " + OLLAMA_MODEL);
         
         try {
-            HttpResponse<String> response = Unirest.post(baseUrl + "/api/chat")
+            HttpResponse<String> response = Unirest.post(OLLAMA_BASE_URL + "/api/chat")
                     .header("Content-Type", "application/json")
                     .body(requestBody.toString())
                     .asString();
-
+            
             if (response.getStatus() != 200) {
-                throw new Exception("Ollama API错误: HTTP " + response.getStatus() + " - " + response.getBody());
+                String errorMsg = "Ollama API错误: HTTP " + response.getStatus();
+                if (response.getBody() != null && !response.getBody().isEmpty()) {
+                    errorMsg += " - " + response.getBody();
+                }
+                throw new Exception(errorMsg);
             }
-
-            System.out.println("Ollama响应状态: " + response.getStatus());
+            
+            System.out.println("Ollama响应: " + response.getStatus() + " OK");
             return parseResponse(response.getBody());
+            
         } catch (Exception e) {
             System.err.println("Ollama API调用失败: " + e.getMessage());
-            System.err.println("请确保:");
-            System.err.println("1. Ollama服务正在运行");
-            System.err.println("2. 模型已下载: docker exec lm_ollama ollama pull " + model);
-            System.err.println("3. URL正确: " + baseUrl);
+            System.err.println("请检查:");
+            System.err.println("  1. Ollama服务是否运行: docker ps | grep ollama");
+            System.err.println("  2. 模型是否已下载: docker exec lm_ollama ollama list");
+            System.err.println("  3. URL是否正确: " + OLLAMA_BASE_URL);
             throw e;
         }
     }
-
-    private static String truncateContent(String content, int maxChars) {
-        if (content.length() <= maxChars) {
-            return content;
-        }
-        System.out.println("警告: 文本过长(" + content.length() + "字符), 截取前" + maxChars + "字符处理");
-        return content.substring(0, maxChars) + "\n...(内容已截断)";
-    }
-
+    
+    /**
+     * Parse Ollama response and extract content
+     */
     private static String parseResponse(String jsonResponse) {
         try {
             JsonObject jsonObject = gson.fromJson(jsonResponse, JsonObject.class);
-            if (jsonObject.has("message")) {
-                return jsonObject.getAsJsonObject("message")
-                        .get("content").getAsString();
-            } else {
-                throw new Exception("响应中没有'message'字段: " + jsonResponse);
+            
+            if (!jsonObject.has("message")) {
+                throw new Exception("响应中缺少'message'字段");
             }
+            
+            JsonObject message = jsonObject.getAsJsonObject("message");
+            if (!message.has("content")) {
+                throw new Exception("消息中缺少'content'字段");
+            }
+            
+            return message.get("content").getAsString();
+            
         } catch (Exception e) {
             System.err.println("解析Ollama响应失败: " + e.getMessage());
             System.err.println("原始响应: " + jsonResponse);
             throw new RuntimeException(e);
         }
     }
-
+    
     public static String getOllamaBaseUrl() {
         return OLLAMA_BASE_URL;
     }
-
+    
     public static String getOllamaModel() {
         return OLLAMA_MODEL;
     }

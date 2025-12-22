@@ -4,17 +4,14 @@ import com.example.entity.ArticleInfo;
 import com.example.entity.ProcessingStatus;
 import com.example.service.ArticleService;
 import com.example.service.impl.ProcessingStatusService;
-import com.example.utils.docling.DoclingExtractor;
 import com.example.utils.bigmodel.BigModelUtil;
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -25,8 +22,8 @@ import static com.example.utils.pdf2txt.Pdf2txt.runpdf2txt;
 import static com.example.utils.result2mysql.PaperSummarySaver.saveSummary;
 
 /**
- * Post-upload processing - using local Ollama with Ministral 3B
- * Now supports status tracking and approval workflow
+ * Post-upload processing - using local Ollama with Ministral-3:3b
+ * Simplified and optimized for fast, accurate metadata extraction
  */
 @Component
 public class AfterUpload {
@@ -45,6 +42,8 @@ public class AfterUpload {
         ProcessingStatus status = processingStatusService.getStatus(taskId);
         
         try {
+            System.out.println("=== 开始处理论文: " + paperFilePath + " ===");
+            
             // Update status: Converting
             status.setStatus("CONVERTING");
             status.setProgress(20);
@@ -54,20 +53,28 @@ public class AfterUpload {
             // Get file paths
             String oripath = paperFilePath.split("\\.")[0];
             String pdfpath = oripath + ".pdf";
-            String docxpath = oripath + ".docx";
             String txtpath = oripath + ".txt";
             
             // Convert formats
             try {
                 runCajToPdf();
-            } catch (IOException | InterruptedException e) {
+            } catch (Exception e) {
                 // Ignore caj conversion errors
             }
             runPdfToDocx();
             runpdf2txt();
-            String doclingJsonPath = DoclingExtractor.runDocling(pdfpath);
             
             System.out.println("文件格式转换完成");
+            
+            // Read text content
+            String content = "";
+            if (new File(txtpath).exists()) {
+                content = new String(Files.readAllBytes(Paths.get(txtpath)));
+                System.out.println("提取文本内容，长度: " + content.length() + " 字符");
+            }
+            if (content.isEmpty()) {
+                throw new Exception("无法提取文本内容");
+            }
             
             // Update status: Extracting metadata
             status.setStatus("EXTRACTING");
@@ -75,31 +82,24 @@ public class AfterUpload {
             status.setCurrentStep("正在提取论文元数据...");
             processingStatusService.updateStatus(status);
             
-            // Read text content (fallback) and build docling-condensed context
-            String content = "";
-            if (new File(txtpath).exists()) {
-                content = new String(Files.readAllBytes(Paths.get(txtpath)));
-                System.out.println("文本内容长度: " + content.length());
-            }
-            if (content.isEmpty()) {
-                throw new Exception("无法提取文本内容");
-            }
-
-            String llmContext = buildDoclingContext(doclingJsonPath, content);
-            
-            // Extract metadata using Ollama
-            String metadataResult = extractMetadata(llmContext);
-            JsonObject metadata = parseJsonObjectSafe(metadataResult);
+            // Extract metadata using Ollama (first 8000 chars usually contain all metadata)
+            String metadataText = content.length() > 8000 ? content.substring(0, 8000) : content;
+            System.out.println("调用Ollama提取元数据 (输入长度: " + metadataText.length() + " 字符)");
+            JsonObject metadata = extractMetadata(metadataText);
             
             // Store extracted metadata in status
-            status.setExtractedTitle(getStringOrDefault(metadata, "title", "未提取"));
-            status.setExtractedAuthors(getStringOrDefault(metadata, "author", "未提取"));
-            status.setExtractedInstitution(getStringOrDefault(metadata, "organ", "未提取"));
-            status.setExtractedYear(getStringOrDefault(metadata, "year", "未提取"));
-            status.setExtractedSource(getStringOrDefault(metadata, "source", "未提取"));
-            status.setExtractedKeywords(getStringOrDefault(metadata, "keyword", "未提取"));
-            status.setExtractedDoi(getStringOrDefault(metadata, "doi", "未提取"));
-            status.setExtractedAbstract(getStringOrDefault(metadata, "summary", "未提取"));
+            status.setExtractedTitle(getStringValue(metadata, "title"));
+            status.setExtractedAuthors(getStringValue(metadata, "author"));
+            status.setExtractedInstitution(getStringValue(metadata, "organ"));
+            status.setExtractedYear(getStringValue(metadata, "year"));
+            status.setExtractedSource(getStringValue(metadata, "source"));
+            status.setExtractedKeywords(getStringValue(metadata, "keyword"));
+            status.setExtractedDoi(getStringValue(metadata, "doi"));
+            status.setExtractedAbstract(getStringValue(metadata, "summary"));
+            
+            System.out.println("元数据提取完成:");
+            System.out.println("  标题: " + status.getExtractedTitle());
+            System.out.println("  作者: " + status.getExtractedAuthors());
             
             // Update status: Analyzing with AI
             status.setStatus("ANALYZING");
@@ -107,10 +107,13 @@ public class AfterUpload {
             status.setCurrentStep("正在使用AI分析论文内容...");
             processingStatusService.updateStatus(status);
             
-            // Generate summary using Ollama
-            String summaryResult = generateSummary(llmContext);
-            JsonObject summaryJson = parseJsonObjectSafe(summaryResult);
-            status.setExtractedSummary(getStringOrDefault(summaryJson, "summary1", "未生成"));
+            // Generate summary using Ollama (first 12000 chars for context)
+            String summaryText = content.length() > 12000 ? content.substring(0, 12000) : content;
+            System.out.println("调用Ollama生成摘要 (输入长度: " + summaryText.length() + " 字符)");
+            JsonObject summaryJson = generateSummary(summaryText);
+            status.setExtractedSummary(getStringValue(summaryJson, "summary1"));
+            
+            System.out.println("AI摘要生成完成");
             
             // Update status: Pending approval
             status.setStatus("PENDING_APPROVAL");
@@ -118,7 +121,7 @@ public class AfterUpload {
             status.setCurrentStep("提取完成，等待用户审核...");
             processingStatusService.updateStatus(status);
             
-            System.out.println("处理完成，等待用户审核。Task ID: " + taskId);
+            System.out.println("=== 处理完成，等待用户审核 ===");
             
         } catch (Exception e) {
             status.setStatus("FAILED");
@@ -126,42 +129,89 @@ public class AfterUpload {
             status.setCurrentStep("处理失败");
             status.setErrorMessage(e.getMessage());
             processingStatusService.updateStatus(status);
-            System.out.println("处理失败: " + e.getMessage());
+            System.err.println("处理失败: " + e.getMessage());
             e.printStackTrace();
         }
     }
     
-    private String getStringOrDefault(JsonObject json, String key, String defaultValue) {
+    /**
+     * Extract metadata from paper content using Ollama
+     */
+    private JsonObject extractMetadata(String content) throws Exception {
+        String prompt = "你是一个学术论文元数据提取专家。请从下面的论文文本中提取元数据，并严格按照以下JSON格式返回，不要添加任何Markdown标记或额外说明：\n\n" +
+            "{\n" +
+            "  \"title\": \"论文标题\",\n" +
+            "  \"author\": \"作者1; 作者2; 作者3\",\n" +
+            "  \"organ\": \"作者单位\",\n" +
+            "  \"year\": \"发表年份(仅数字)\",\n" +
+            "  \"source\": \"期刊或会议名称\",\n" +
+            "  \"keyword\": \"关键词1; 关键词2; 关键词3\",\n" +
+            "  \"doi\": \"DOI编号\",\n" +
+            "  \"summary\": \"论文摘要内容\"\n" +
+            "}\n\n" +
+            "如果某个字段无法提取，请使用空字符串\"\"。现在开始提取以下论文的元数据：\n\n" +
+            content;
+        
+        String response = BigModelUtil.ollamaTextGeneration(prompt);
+        return parseJsonSafely(response);
+    }
+    
+    /**
+     * Generate summary from paper content using Ollama
+     */
+    private JsonObject generateSummary(String content) throws Exception {
+        String prompt = "你是一个学术论文分析专家。请对下面的论文内容生成一个简洁的摘要(约200字)，并严格按照以下JSON格式返回，不要添加任何Markdown标记或额外说明：\n\n" +
+            "{\n" +
+            "  \"summary1\": \"论文摘要内容\"\n" +
+            "}\n\n" +
+            "现在开始分析以下论文：\n\n" +
+            content;
+        
+        String response = BigModelUtil.ollamaTextGeneration(prompt);
+        return parseJsonSafely(response);
+    }
+    
+    /**
+     * Safely parse JSON from Ollama response, handling various formats
+     */
+    private JsonObject parseJsonSafely(String response) {
+        try {
+            // Remove markdown code fences if present
+            String cleaned = response.trim();
+            if (cleaned.startsWith("```json")) {
+                cleaned = cleaned.substring(7);
+            }
+            if (cleaned.startsWith("```")) {
+                cleaned = cleaned.substring(3);
+            }
+            if (cleaned.endsWith("```")) {
+                cleaned = cleaned.substring(0, cleaned.length() - 3);
+            }
+            cleaned = cleaned.trim();
+            
+            // Try to parse as JSON
+            return JsonParser.parseString(cleaned).getAsJsonObject();
+        } catch (Exception e) {
+            System.err.println("JSON解析失败，响应内容: " + response);
+            System.err.println("错误: " + e.getMessage());
+            // Return empty JSON object as fallback
+            return new JsonObject();
+        }
+    }
+    
+    /**
+     * Get string value from JSON object with fallback
+     */
+    private String getStringValue(JsonObject json, String key) {
         try {
             if (json != null && json.has(key) && !json.get(key).isJsonNull()) {
-                return json.get(key).getAsString();
+                String value = json.get(key).getAsString().trim();
+                return value.isEmpty() ? "未提取" : value;
             }
         } catch (Exception e) {
-            // Ignore parsing errors
+            System.err.println("获取字段 " + key + " 失败: " + e.getMessage());
         }
-        return defaultValue;
-    }
-    
-    /**
-     * Extract metadata from paper content
-     */
-    private String extractMetadata(String content) throws Exception {
-        String prompt = Config.METADATA_EXTRACTION_JSON + 
-            "\n请从以下论文内容中提取元数据，并严格以JSON对象返回，键名必须与模板一致，不要添加额外字段或文本。未知字段置为空字符串。严禁输出Markdown或额外说明。\n" + 
-            content.substring(0, Math.min(content.length(), 12000)); // Trim to reduce LLM load
-        
-        return BigModelUtil.ollamaTextGeneration(prompt);
-    }
-    
-    /**
-     * Generate summary from paper content
-     */
-    private String generateSummary(String content) throws Exception {
-        String prompt = Config.SUMMARY_JSON + 
-            "\n请对以下论文内容生成摘要，并严格以JSON对象返回，键名必须与模板一致，不要添加额外字段或文本。未知字段置为空字符串。严禁输出Markdown或额外说明。\n" + 
-            content.substring(0, Math.min(content.length(), 12000)); // Trim to reduce LLM load
-        
-        return BigModelUtil.ollamaTextGeneration(prompt);
+        return "未提取";
     }
     
     /**
@@ -169,6 +219,8 @@ public class AfterUpload {
      */
     public void saveApprovedArticle(ArticleInfo articleInfo, ProcessingStatus status) {
         try {
+            System.out.println("=== 保存已批准的论文: " + articleInfo.getTitle() + " ===");
+            
             // Get file paths
             String oripath = status.getFilePath().split("\\.")[0];
             articleInfo.setPathpdf(oripath + ".pdf");
@@ -179,144 +231,41 @@ public class AfterUpload {
             articleService.saveArticle(articleInfo);
             System.out.println("成功将论文信息存入mysql");
             
-            // Save summary (create simplified JSON from extracted data)
-            String summaryJson = createSummaryJson(status);
-            saveSummary(Config.OLLAMA_MODEL, articleInfo.getTitle(), summaryJson, "0");
+            // Create summary JSON
+            JsonObject summaryJson = new JsonObject();
+            summaryJson.addProperty("summary1", articleInfo.getSummary() != null ? articleInfo.getSummary() : "");
+            summaryJson.addProperty("summary2", "");
+            summaryJson.addProperty("summary3", "");
+            summaryJson.addProperty("summary4", "");
+            summaryJson.addProperty("summary5", "");
+            summaryJson.addProperty("summary6", "");
+            summaryJson.addProperty("algorithm1", "");
+            summaryJson.addProperty("algorithm2", "");
+            summaryJson.addProperty("algorithm3", "");
+            summaryJson.addProperty("algorithm4", "");
+            summaryJson.addProperty("target", "");
+            summaryJson.addProperty("environment", "");
+            summaryJson.addProperty("tools", "");
+            summaryJson.addProperty("datas", "");
+            summaryJson.addProperty("standard", "");
+            summaryJson.addProperty("result", "");
+            summaryJson.addProperty("future", "");
+            summaryJson.addProperty("weekpoint", "");
+            summaryJson.addProperty("keyword", articleInfo.getKeyword() != null ? articleInfo.getKeyword() : "");
+            
+            saveSummary(Config.OLLAMA_MODEL, articleInfo.getTitle(), gson.toJson(summaryJson), "0");
             System.out.println("成功将摘要存入数据库");
             
             // Update Neo4j graph
             runNeo4jLoader(false, articleInfo.getTitle());
             System.out.println("图谱更新完毕");
+            System.out.println("=== 论文保存完成 ===");
             
         } catch (Exception e) {
-            System.out.println("保存失败: " + e.getMessage());
+            System.err.println("保存失败: " + e.getMessage());
             e.printStackTrace();
             throw new RuntimeException(e);
         }
-    }
-    
-    /**
-     * Create summary JSON from extracted data
-     */
-    private String createSummaryJson(ProcessingStatus status) {
-        JsonObject json = new JsonObject();
-        json.addProperty("summary1", status.getExtractedSummary() != null ? status.getExtractedSummary() : "");
-        json.addProperty("summary2", "");
-        json.addProperty("summary3", "");
-        json.addProperty("summary4", "");
-        json.addProperty("summary5", "");
-        json.addProperty("summary6", "");
-        json.addProperty("algorithm1", "");
-        json.addProperty("algorithm2", "");
-        json.addProperty("algorithm3", "");
-        json.addProperty("algorithm4", "");
-        json.addProperty("target", "");
-        json.addProperty("environment", "");
-        json.addProperty("tools", "");
-        json.addProperty("datas", "");
-        json.addProperty("standard", "");
-        json.addProperty("result", "");
-        json.addProperty("future", "");
-        json.addProperty("weekpoint", "");
-        json.addProperty("keyword", status.getExtractedKeywords() != null ? status.getExtractedKeywords() : "");
-        return gson.toJson(json);
-    }
-
-    /**
-     * Build a condensed context for the LLM using docling output if available; otherwise fallback to raw text.
-     */
-    private String buildDoclingContext(String doclingJsonPath, String fallbackText) {
-        if (doclingJsonPath != null && new File(doclingJsonPath).exists()) {
-            try {
-                String raw = Files.readString(Paths.get(doclingJsonPath));
-                JsonObject obj = JsonParser.parseString(raw).getAsJsonObject();
-                StringBuilder sb = new StringBuilder();
-                appendField(sb, "Title", getStringOrDefault(obj, "title", ""));
-                appendField(sb, "Authors", String.join("; ", getAuthors(obj)));
-                appendField(sb, "Abstract", getStringOrDefault(obj, "abstract", ""));
-                appendField(sb, "Introduction", getStringOrDefault(obj, "introduction", ""));
-                appendField(sb, "Conclusion", getStringOrDefault(obj, "conclusion", ""));
-
-                if (obj.has("sections") && obj.get("sections").isJsonArray()) {
-                    obj.get("sections").getAsJsonArray().forEach(secElem -> {
-                        try {
-                            JsonObject sec = secElem.getAsJsonObject();
-                            String title = getStringOrDefault(sec, "title", "");
-                            String para = getStringOrDefault(sec, "first_paragraph", "");
-                            if (!title.isEmpty() && !para.isEmpty()) {
-                                sb.append("Section: ").append(title).append("\n");
-                                sb.append("First paragraph: ").append(para).append("\n\n");
-                            }
-                        } catch (Exception ignored) {
-                        }
-                    });
-                }
-
-                // Add a small markdown head if present
-                appendField(sb, "Markdown head", getStringOrDefault(obj, "markdown_head", ""));
-
-                String condensed = sb.toString();
-                int maxLen = 12000;
-                if (condensed.length() > maxLen) {
-                    return condensed.substring(0, maxLen) + "\n...(内容已截断)";
-                }
-                return condensed;
-            } catch (Exception e) {
-                System.out.println("Docling context构建失败，使用原始文本: " + e.getMessage());
-            }
-        }
-
-        // Fallback to truncated raw text
-        int maxLen = 12000;
-        if (fallbackText.length() > maxLen) {
-            return fallbackText.substring(0, maxLen) + "\n...(内容已截断)";
-        }
-        return fallbackText;
-    }
-
-    private void appendField(StringBuilder sb, String label, String value) {
-        if (value != null && !value.isEmpty()) {
-            sb.append(label).append(": ").append(value).append("\n\n");
-        }
-    }
-
-    private String[] getAuthors(JsonObject obj) {
-        try {
-            if (obj.has("authors") && obj.get("authors").isJsonArray()) {
-                return gson.fromJson(obj.get("authors"), String[].class);
-            }
-        } catch (Exception ignored) {
-        }
-        return new String[]{};
-    }
-
-    // Defensive JSON parsing: handles plain strings or nested JSON strings
-    private JsonObject parseJsonObjectSafe(String content) {
-        try {
-            JsonElement element = JsonParser.parseString(content);
-            if (element.isJsonObject()) {
-                return element.getAsJsonObject();
-            }
-            if (element.isJsonPrimitive()) {
-                String inner = element.getAsString();
-                try {
-                    JsonElement innerElement = JsonParser.parseString(inner);
-                    if (innerElement.isJsonObject()) {
-                        return innerElement.getAsJsonObject();
-                    }
-                } catch (Exception ignored) {
-                    // Fall through to wrapping raw content
-                }
-                JsonObject fallback = new JsonObject();
-                fallback.addProperty("raw", inner);
-                return fallback;
-            }
-        } catch (Exception ignored) {
-            // Fall through to wrapping raw content
-        }
-        JsonObject fallback = new JsonObject();
-        fallback.addProperty("raw", content);
-        return fallback;
     }
     
     /**
@@ -325,6 +274,5 @@ public class AfterUpload {
     @Deprecated
     public void file_task(ArticleInfo articleInfo) {
         System.out.println("Warning: Using deprecated file_task method. Please use processWithStatus instead.");
-        // This method is kept for compatibility but should not be used
     }
 }
