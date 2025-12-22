@@ -1,106 +1,254 @@
 package com.example.utils;
 
 import com.example.entity.ArticleInfo;
+import com.example.entity.ProcessingStatus;
 import com.example.service.ArticleService;
+import com.example.service.impl.ProcessingStatusService;
 import com.example.utils.bigmodel.BigModelUtil;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
 import static com.example.utils.Caj2pdf.Caj2pdf.runCajToPdf;
-import static com.example.utils.bigmodel.QwenChat.QwenChat;
 import static com.example.utils.neo4jloader.Neo4jLoader.runNeo4jLoader;
 import static com.example.utils.pdf2docx.Pdf2docx.runPdfToDocx;
 import static com.example.utils.pdf2txt.Pdf2txt.runpdf2txt;
 import static com.example.utils.result2mysql.PaperSummarySaver.saveSummary;
 
+/**
+ * Post-upload processing - using local Ollama with Ministral-3:3b
+ * Simplified and optimized for fast, accurate metadata extraction
+ */
 @Component
 public class AfterUpload {
     @Autowired
     private ArticleService articleService;
-    public void file_task(ArticleInfo articleInfo) {
-        System.out.println("成功接收上传的文件，提交异步任务,正在处理论文："+articleInfo.getTitle());LogUtil_AfterUpload.log("成功接收上传的文件，提交异步任务,正在处理论文："+articleInfo.getTitle());
-        //获取论文前缀
-        String oripath = articleInfo.getPatha().split("\\.")[0];//获取前缀
-        String cajpath = oripath + ".caj";
-        String pdfpath = oripath + ".pdf";
-        String docxpath = oripath + ".docx";
-        String txtpath = oripath + ".txt";
-        String docpath = oripath + ".doc";
-        try {runCajToPdf();} catch (IOException | InterruptedException e) {throw new RuntimeException(e);}
-        if (new File(pdfpath).exists()) {
-            articleInfo.setPathpdf(pdfpath);System.out.println("pdf已存在或已转换为pdf");LogUtil_AfterUpload.log("pdf已存在或已转换为pdf");} else {System.out.println("pdf转换失败");LogUtil_AfterUpload.log("pdf转换失败");}
-
-        runPdfToDocx();
-        if (new File(docxpath).exists()) {
-            articleInfo.setPathdocx(docxpath);System.out.println("docx已存在或已转换为docx");LogUtil_AfterUpload.log("docx已存在或已转换为docx");} else {System.out.println("docx转换失败");LogUtil_AfterUpload.log("docx转换失败");}
-
-        runpdf2txt();
-        if (new File(txtpath).exists()) {
-            articleInfo.setPathtxt(txtpath);System.out.println("已转换为txt");LogUtil_AfterUpload.log("已转换为txt");} else {System.out.println("txt转换失败");LogUtil_AfterUpload.log("txt转换失败");}
-
-
-        boolean ifsuccess=true;
-
-        if(!new File(docxpath).exists()  &&!new File(pdfpath).exists()&&!new File(txtpath).exists()){
-            if (new File(cajpath).exists())new File(cajpath).delete();
-            ifsuccess=false;
-            System.out.println("没有可用文件，回滚删除已有文件和数据");LogUtil_AfterUpload.log("没有可用文件，回滚删除已有文件和数据");
-        }
-
-        if(ifsuccess){
-            String s = "你好，按照上面的json串格式返回，要求已经包含在字符串内，必须返回json形式";
-            if (!new File(cajpath).exists()  &&!new File(pdfpath).exists()){
-                //文档文件上传
-                try {
-                    System.out.println("将文档上传给大模型,会花几十秒");LogUtil_AfterUpload.log("将文档上传给大模型,会花几十秒");
-                    String exist= new File(docpath).exists()?docpath:docxpath;
-                    String qwenres = BigModelUtil.qwenDocumentUnderstanding(Config.JSON + s, exist);
-                    saveSummary(Config.QWEN_DOC_MODEL, articleInfo.getTitle(), qwenres,"0");
-                    System.out.println("大模型处理完毕,已经结果存入数据库"+"本次使用的模型是"+Config.QWEN_DOC_MODEL);LogUtil_AfterUpload.log("大模型处理完毕,已经结果存入数据库"+"本次使用的模型是"+Config.QWEN_DOC_MODEL);
-                } catch (Exception e) {System.out.println("调用失败" + e.getMessage());LogUtil_AfterUpload.log("调用失败" + e.getMessage());}
-            }else {
-                //文档文本上传
-                try {
-                    String content = new String(Files.readAllBytes(Paths.get(txtpath)));
-                    if(content.length()>=35000){
-
-                        System.out.println("文本较长,关闭模型比较,将文本上传给大模型,会花几十秒，当前论文字符长度: " + content.length());LogUtil_AfterUpload.log("将文本上传给大模型,会花几十秒，当前论文字符长度: " + content.length());
-                        String qwenres = QwenChat(Config.QWEN_MODEL1,content+Config.JSON+s);
-                        saveSummary(Config.QWEN_MODEL1, articleInfo.getTitle(), qwenres,"0");
-                        System.out.println("大模型处理完毕,已将结果存入数据库"+"本次使用的模型是"+Config.QWEN_MODEL1);LogUtil_AfterUpload.log("大模型处理完毕,已将结果存入数据库"+"本次使用的模型是"+Config.QWEN_MODEL1);
-
-                    }if(content.length()<35000){
-
-                        System.out.println("文本较短,开启模型比较,将文本上传给第一个大模型,会花几十秒，当前论文字符长度: " + content.length());LogUtil_AfterUpload.log("将文本上传给第一个大模型,会花几十秒，当前论文字符长度: " + content.length());
-                        String qwenres = QwenChat(Config.QWEN_MODEL1,content+Config.JSON+s);
-                        saveSummary(Config.QWEN_MODEL1, articleInfo.getTitle(), qwenres,"0");
-
-                        System.out.println("成功获取结果！将文本上传给第二个大模型,会花几十秒" );LogUtil_AfterUpload.log("将文本上传给第二个大模型,会花几十秒");
-                        String qwenres2 = QwenChat(Config.QWEN_MODEL3,content+Config.JSON+s);
-                        saveSummary(Config.QWEN_MODEL3, articleInfo.getTitle(), qwenres2,"0");
-
-                        System.out.println("成功获取结果！将文本上传给评判模型,会花几十秒" );LogUtil_AfterUpload.log("将文本上传给评判大模型,会花几十秒");
-                        String end=qwenres+qwenres2;
-                        String qwenres3 = QwenChat(Config.QWEN_MODEL4,end+Config.JSON2+"按照上面的json串格式返回，要求已经包含在字符串内，从上面的两个结果中选出每个字段最好的，只填1或者2，1代表第一个好，2代表第二个好，不能全部都选一个模型，必须返回json形式");
-                        saveSummary(Config.QWEN_MODEL2, articleInfo.getTitle(), qwenres3,"1");
-
-                        System.out.println("成功获取结果！大模型处理完毕,已将结果存入数据库"+"本次使用的模型是:"+Config.QWEN_MODEL1+"和"+Config.QWEN_MODEL3+" 评判模型为:"+Config.QWEN_MODEL2);LogUtil_AfterUpload.log("成功获取结果！大模型处理完毕,已将结果存入数据库"+"本次使用的模型是:"+Config.QWEN_MODEL1+"和"+Config.QWEN_MODEL3+" 评判模型为:"+Config.QWEN_MODEL2);
-                    }
-                    } catch (IOException e) {System.out.println("调用失败" + e.getMessage());LogUtil_AfterUpload.log("调用失败" + e.getMessage());} catch (
-                        Exception e) {
-                    throw new RuntimeException(e);
-                }
+    
+    @Autowired
+    private ProcessingStatusService processingStatusService;
+    
+    private final Gson gson = new Gson();
+    
+    /**
+     * Process paper with status tracking
+     */
+    public void processWithStatus(String taskId, String paperFilePath) {
+        ProcessingStatus status = processingStatusService.getStatus(taskId);
+        
+        try {
+            System.out.println("=== 开始处理论文: " + paperFilePath + " ===");
+            
+            // Update status: Converting
+            status.setStatus("CONVERTING");
+            status.setProgress(20);
+            status.setCurrentStep("正在转换文件格式...");
+            processingStatusService.updateStatus(status);
+            
+            // Get file paths
+            String oripath = paperFilePath.split("\\.")[0];
+            String pdfpath = oripath + ".pdf";
+            String txtpath = oripath + ".txt";
+            
+            // Convert formats
+            try {
+                runCajToPdf();
+            } catch (Exception e) {
+                // Ignore caj conversion errors
             }
-            articleService.saveArticle(articleInfo);
-            System.out.println("成功将论文信息存入mysql");LogUtil_AfterUpload.log("成功将论文信息存入mysql");
-            runNeo4jLoader(false,articleInfo.getTitle());
-            System.out.println("图谱更新完毕");LogUtil_AfterUpload.log("图谱更新完毕");
-            System.out.println("----------------------------------------------------");LogUtil_AfterUpload.log("----------------------------------------------------");
+            runPdfToDocx();
+            runpdf2txt();
+            
+            System.out.println("文件格式转换完成");
+            
+            // Read text content
+            String content = "";
+            if (new File(txtpath).exists()) {
+                content = new String(Files.readAllBytes(Paths.get(txtpath)));
+                System.out.println("提取文本内容，长度: " + content.length() + " 字符");
+            }
+            if (content.isEmpty()) {
+                throw new Exception("无法提取文本内容");
+            }
+            
+            // Update status: Extracting metadata
+            status.setStatus("EXTRACTING");
+            status.setProgress(40);
+            status.setCurrentStep("正在提取论文元数据...");
+            processingStatusService.updateStatus(status);
+            
+            // Extract metadata using Ollama (first 8000 chars usually contain all metadata)
+            String metadataText = content.length() > 8000 ? content.substring(0, 8000) : content;
+            System.out.println("调用Ollama提取元数据 (输入长度: " + metadataText.length() + " 字符)");
+            JsonObject metadata = extractMetadata(metadataText);
+            
+            // Store extracted metadata in status
+            status.setExtractedTitle(getStringValue(metadata, "title"));
+            status.setExtractedAuthors(getStringValue(metadata, "author"));
+            status.setExtractedInstitution(getStringValue(metadata, "organ"));
+            status.setExtractedYear(getStringValue(metadata, "year"));
+            status.setExtractedSource(getStringValue(metadata, "source"));
+            status.setExtractedKeywords(getStringValue(metadata, "keyword"));
+            status.setExtractedDoi(getStringValue(metadata, "doi"));
+            status.setExtractedAbstract(getStringValue(metadata, "summary"));
+            
+            System.out.println("元数据提取完成:");
+            System.out.println("  标题: " + status.getExtractedTitle());
+            System.out.println("  作者: " + status.getExtractedAuthors());
+            System.out.println("  摘要: " + status.getExtractedAbstract());
+            
+            // Use the extracted abstract as the summary (no need for second AI call)
+            status.setExtractedSummary(status.getExtractedAbstract());
+            
+            // Update status: Pending approval
+            status.setStatus("PENDING_APPROVAL");
+            status.setProgress(100);
+            status.setCurrentStep("提取完成，等待用户审核...");
+            processingStatusService.updateStatus(status);
+            
+            System.out.println("=== 元数据提取完成，等待用户审核 ===");
+            
+        } catch (Exception e) {
+            status.setStatus("FAILED");
+            status.setProgress(0);
+            status.setCurrentStep("处理失败");
+            status.setErrorMessage(e.getMessage());
+            processingStatusService.updateStatus(status);
+            System.err.println("处理失败: " + e.getMessage());
+            e.printStackTrace();
         }
+    }
+    
+    /**
+     * Extract metadata from paper content using Ollama
+     */
+    private JsonObject extractMetadata(String content) throws Exception {
+        String prompt = "你是一个学术论文元数据提取专家。请从下面的论文文本中提取元数据，并严格按照以下JSON格式返回，不要添加任何Markdown标记或额外说明：\n\n" +
+            "{\n" +
+            "  \"title\": \"论文标题\",\n" +
+            "  \"author\": \"作者1; 作者2; 作者3\",\n" +
+            "  \"organ\": \"作者单位\",\n" +
+            "  \"year\": \"发表年份(仅数字)\",\n" +
+            "  \"source\": \"期刊或会议名称\",\n" +
+            "  \"keyword\": \"关键词1; 关键词2; 关键词3\",\n" +
+            "  \"doi\": \"DOI编号\",\n" +
+            "  \"summary\": \"论文摘要内容\"\n" +
+            "}\n\n" +
+            "如果某个字段无法提取，请使用空字符串\"\"。现在开始提取以下论文的元数据：\n\n" +
+            content;
+        
+        String response = BigModelUtil.ollamaTextGeneration(prompt);
+        return parseJsonSafely(response);
+    }
+    
+
+    /**
+     * Safely parse JSON from Ollama response, handling various formats
+     */
+    private JsonObject parseJsonSafely(String response) {
+        try {
+            // Remove markdown code fences if present
+            String cleaned = response.trim();
+            if (cleaned.startsWith("```json")) {
+                cleaned = cleaned.substring(7);
+            }
+            if (cleaned.startsWith("```")) {
+                cleaned = cleaned.substring(3);
+            }
+            if (cleaned.endsWith("```")) {
+                cleaned = cleaned.substring(0, cleaned.length() - 3);
+            }
+            cleaned = cleaned.trim();
+            
+            // Try to parse as JSON
+            return JsonParser.parseString(cleaned).getAsJsonObject();
+        } catch (Exception e) {
+            System.err.println("JSON解析失败，响应内容: " + response);
+            System.err.println("错误: " + e.getMessage());
+            // Return empty JSON object as fallback
+            return new JsonObject();
+        }
+    }
+    
+    /**
+     * Get string value from JSON object with fallback
+     */
+    private String getStringValue(JsonObject json, String key) {
+        try {
+            if (json != null && json.has(key) && !json.get(key).isJsonNull()) {
+                String value = json.get(key).getAsString().trim();
+                return value.isEmpty() ? "未提取" : value;
+            }
+        } catch (Exception e) {
+            System.err.println("获取字段 " + key + " 失败: " + e.getMessage());
+        }
+        return "未提取";
+    }
+    
+    /**
+     * Save approved article to database
+     */
+    public void saveApprovedArticle(ArticleInfo articleInfo, ProcessingStatus status) {
+        try {
+            System.out.println("=== 保存已批准的论文: " + articleInfo.getTitle() + " ===");
+            
+            // Get file paths
+            String oripath = status.getFilePath().split("\\.")[0];
+            articleInfo.setPathpdf(oripath + ".pdf");
+            articleInfo.setPathdocx(oripath + ".docx");
+            articleInfo.setPathtxt(oripath + ".txt");
+            
+            // Save article info
+            articleService.saveArticle(articleInfo);
+            System.out.println("成功将论文信息存入mysql");
+            
+            // Create summary JSON
+            JsonObject summaryJson = new JsonObject();
+            summaryJson.addProperty("summary1", articleInfo.getSummary() != null ? articleInfo.getSummary() : "");
+            summaryJson.addProperty("summary2", "");
+            summaryJson.addProperty("summary3", "");
+            summaryJson.addProperty("summary4", "");
+            summaryJson.addProperty("summary5", "");
+            summaryJson.addProperty("summary6", "");
+            summaryJson.addProperty("algorithm1", "");
+            summaryJson.addProperty("algorithm2", "");
+            summaryJson.addProperty("algorithm3", "");
+            summaryJson.addProperty("algorithm4", "");
+            summaryJson.addProperty("target", "");
+            summaryJson.addProperty("environment", "");
+            summaryJson.addProperty("tools", "");
+            summaryJson.addProperty("datas", "");
+            summaryJson.addProperty("standard", "");
+            summaryJson.addProperty("result", "");
+            summaryJson.addProperty("future", "");
+            summaryJson.addProperty("weekpoint", "");
+            summaryJson.addProperty("keyword", articleInfo.getKeyword() != null ? articleInfo.getKeyword() : "");
+            
+            saveSummary(Config.OLLAMA_MODEL, articleInfo.getTitle(), gson.toJson(summaryJson), "0");
+            System.out.println("成功将摘要存入数据库");
+            
+            // Update Neo4j graph
+            runNeo4jLoader(false, articleInfo.getTitle());
+            System.out.println("图谱更新完毕");
+            System.out.println("=== 论文保存完成 ===");
+            
+        } catch (Exception e) {
+            System.err.println("保存失败: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+    }
+    
+    /**
+     * Legacy method for backward compatibility (deprecated)
+     */
+    @Deprecated
+    public void file_task(ArticleInfo articleInfo) {
+        System.out.println("Warning: Using deprecated file_task method. Please use processWithStatus instead.");
     }
 }

@@ -2,15 +2,19 @@
 set -euo pipefail
 
 REQ_FILE="springboot/requirements.txt"
-WHEEL_DIR="docker/wheels"
+TARGETS=("docker/wheels" "springboot/wheels")
 
-mkdir -p "$WHEEL_DIR"
+for dir in "${TARGETS[@]}"; do
+  mkdir -p "$dir"
+done
 
 # Retry up to 3 times to download wheels (handles transient network issues)
 for i in 1 2 3; do
   echo "Downloading wheels (attempt $i)..."
-  if pip3 download -r "$REQ_FILE" -d "$WHEEL_DIR"; then
-    echo "Downloaded wheels to $WHEEL_DIR"
+  if pip3 download -r "$REQ_FILE" -d "${TARGETS[0]}"; then
+    # Mirror to springboot/wheels for Dockerfile COPY wheels /app/wheels
+    rsync -a --delete "${TARGETS[0]}/" "${TARGETS[1]}/"
+    echo "Downloaded wheels to ${TARGETS[*]}"
     exit 0
   else
     echo "Attempt $i failed, retrying in 5s..."

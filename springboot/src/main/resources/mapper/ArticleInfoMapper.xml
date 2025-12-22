@@ -45,10 +45,6 @@
         select * from article_info
         <where>
             <if test="title != null and title != ''">and title like concat('%', #{title}, '%')</if>
-            <!-- 可以根据需要添加其他查询条件 -->
-            <if test="userid != null and userid != ''">
-                AND userid = #{userid}
-            </if>
         </where>
     </select>
 

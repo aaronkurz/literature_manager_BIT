@@ -4,11 +4,12 @@ import cn.hutool.core.io.FileUtil;
 import com.example.common.Result;
 import com.example.entity.ArticleInfo;
 import com.example.entity.ArticleSummary;
+import com.example.entity.ProcessingStatus;
 import com.example.service.ArticleService;
+import com.example.service.impl.ProcessingStatusService;
 import com.example.service.impl.TaskService;
 import com.example.utils.AfterUpload;
 import com.example.utils.Config;
-import com.example.utils.TokenUtils;
 import com.github.pagehelper.PageInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -20,10 +21,10 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.Consumer;
 
 import static com.example.utils.neo4jloader.Neo4jLoader.runNeo4jLoader;
 
@@ -36,18 +37,12 @@ public class ArticleController {
 
     @Resource
     private TaskService taskService;
+    
+    @Resource
+    private ProcessingStatusService processingStatusService;
 
     @Autowired
     private AfterUpload afterUpload;
-
-    private final Consumer<ArticleInfo> func;
-
-    public ArticleController(ArticleService articleService, TaskService taskService, AfterUpload afterUpload) {
-        this.articleService = articleService;
-        this.taskService = taskService;
-        this.afterUpload = afterUpload;
-        this.func = afterUpload::file_task;
-    }
 
     @PostMapping("/search")
     public Result<PageInfo<ArticleInfo>> search(@RequestBody ArticleInfo articleInfo,
@@ -60,36 +55,103 @@ public class ArticleController {
     @PostMapping("/summary/{title}")
     public Result<List<ArticleSummary>> getSummary(@PathVariable String title) {
         List<ArticleSummary> summaries = articleService.selectSummariesByTitle(title);
-        return Result.success(summaries); // 修改为返回列表
+        return Result.success(summaries);
     }
 
-    // 其他方法保持不变
     @PostMapping("/upload")
-    public Result<String> uploadArticle(
-            @RequestParam("token") String token,
-            ArticleInfo articleInfo,
-            @RequestParam("paperFile") MultipartFile paperFile,
-            @RequestParam(value = "attachment", required = false) MultipartFile attachment) { // 修改为单个 MultipartFile
+    public Result<Map<String, String>> uploadArticle(@RequestParam("paperFile") MultipartFile paperFile) {
         try {
-            String userData = TokenUtils.verifyToken(token);
-            if (userData == null) {
-                return Result.error("401", "无效的token，请重新登录");
-            }
-            String userId = userData.split("-")[0];
-            articleInfo.setUserid(userId);
-
+            // Generate unique task ID
+            String taskId = UUID.randomUUID().toString();
+            
+            // Save file
             String paperFilePath = saveFile(paperFile, "paper");
-            articleInfo.setPatha(paperFilePath);
-
-            if (attachment != null) { // 判断单个附件是否存在
-                String attachmentPath = saveFile(attachment, "attachment");
-                articleInfo.setPathb(attachmentPath); // 直接设置单个路径，不需要拼接
-            }
-
-            taskService.executeAsync(() -> func.accept(articleInfo));
-            return Result.success("提交成功");
+            
+            // Create initial processing status
+            ProcessingStatus status = new ProcessingStatus();
+            status.setTaskId(taskId);
+            status.setFileName(paperFile.getOriginalFilename());
+            status.setStatus("UPLOADING");
+            status.setProgress(10);
+            status.setCurrentStep("文件上传成功");
+            status.setFilePath(paperFilePath);
+            processingStatusService.createStatus(status);
+            
+            // Start async processing with taskId
+            taskService.executeAsync(() -> afterUpload.processWithStatus(taskId, paperFilePath));
+            
+            // Return taskId to frontend for status polling
+            Map<String, String> result = new HashMap<>();
+            result.put("taskId", taskId);
+            result.put("message", "文件上传成功，正在处理...");
+            return Result.success(result);
         } catch (Exception e) {
             return Result.error("500", "文件上传失败：" + e.getMessage());
+        }
+    }
+
+    @GetMapping("/processing-status/{taskId}")
+    public Result<ProcessingStatus> getProcessingStatus(@PathVariable String taskId) {
+        ProcessingStatus status = processingStatusService.getStatus(taskId);
+        if (status == null) {
+            return Result.error("404", "任务不存在");
+        }
+        return Result.success(status);
+    }
+    
+    @PostMapping("/approve/{taskId}")
+    public Result<String> approveAndSave(@PathVariable String taskId, @RequestBody ArticleInfo articleInfo) {
+        try {
+            ProcessingStatus status = processingStatusService.getStatus(taskId);
+            if (status == null) {
+                return Result.error("404", "任务不存在");
+            }
+            
+            if (!"PENDING_APPROVAL".equals(status.getStatus())) {
+                return Result.error("400", "任务状态不正确");
+            }
+            
+            // Set file path from status
+            articleInfo.setPatha(status.getFilePath());
+            
+            // Save article and summary to database
+            afterUpload.saveApprovedArticle(articleInfo, status);
+            
+            // Update status to approved
+            status.setStatus("APPROVED");
+            status.setProgress(100);
+            status.setCurrentStep("已批准并保存到数据库");
+            processingStatusService.updateStatus(status);
+            processingStatusService.markCompleted(taskId);
+            
+            return Result.success("保存成功");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error("500", "保存失败：" + e.getMessage());
+        }
+    }
+    
+    @PostMapping("/reject/{taskId}")
+    public Result<String> rejectAndDelete(@PathVariable String taskId) {
+        try {
+            ProcessingStatus status = processingStatusService.getStatus(taskId);
+            if (status == null) {
+                return Result.error("404", "任务不存在");
+            }
+            
+            // Delete uploaded file
+            if (status.getFilePath() != null) {
+                FileUtil.del(status.getFilePath());
+            }
+            
+            // Update status to rejected
+            status.setStatus("REJECTED");
+            status.setCurrentStep("用户拒绝，已删除文件");
+            processingStatusService.updateStatus(status);
+            
+            return Result.success("已拒绝并删除");
+        } catch (Exception e) {
+            return Result.error("500", "操作失败：" + e.getMessage());
         }
     }
 

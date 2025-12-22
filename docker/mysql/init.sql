@@ -1,29 +1,8 @@
--- Initial database and schema for literature_manager
+-- Initial database and schema for literature_manager (simplified for local research tool)
 CREATE DATABASE IF NOT EXISTS manager CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE manager;
 
--- role table (users)
-CREATE TABLE IF NOT EXISTS role (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  username VARCHAR(64) NOT NULL UNIQUE,
-  password VARCHAR(128),
-  name VARCHAR(128),
-  phone VARCHAR(20),
-  email VARCHAR(128),
-  avatar VARCHAR(255),
-  role VARCHAR(16)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- notice table
-CREATE TABLE IF NOT EXISTS notice (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  title VARCHAR(255),
-  content TEXT,
-  time VARCHAR(50),
-  user VARCHAR(64)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- article_info table (main articles)
+-- article_info table (main articles) - removed userid field
 CREATE TABLE IF NOT EXISTS article_info (
   id INT AUTO_INCREMENT PRIMARY KEY,
   srcdatabase VARCHAR(128),
@@ -45,22 +24,26 @@ CREATE TABLE IF NOT EXISTS article_info (
   pathb VARCHAR(1024),
   pathdocx VARCHAR(1024),
   pathtxt VARCHAR(1024),
-  pathpdf VARCHAR(1024),
-  userid VARCHAR(64)
+  pathpdf VARCHAR(1024)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- article_summary table
+-- article_summary table (simplified to one summary length)
 CREATE TABLE IF NOT EXISTS article_summary (
   id INT AUTO_INCREMENT PRIMARY KEY,
   model VARCHAR(64),
   title VARCHAR(1024),
-  summary TEXT,
-  short1 TEXT, short2 TEXT, short3 TEXT, short4 TEXT, short5 TEXT, short6 TEXT,
-  mid1 TEXT, mid2 TEXT, mid3 TEXT, mid4 TEXT, mid5 TEXT, mid6 TEXT,
-  long1 TEXT, long2 TEXT, long3 TEXT, long4 TEXT, long5 TEXT, long6 TEXT,
+  fullSummary TEXT,
+  summary1 TEXT, 
+  summary2 TEXT, 
+  summary3 TEXT, 
+  summary4 TEXT, 
+  summary5 TEXT, 
+  summary6 TEXT,
   target TEXT,
-  algmid1 TEXT, algmid2 TEXT, algmid3 TEXT, algmid4 TEXT,
-  alglong1 TEXT, alglong2 TEXT, alglong3 TEXT, alglong4 TEXT,
+  algorithm1 TEXT, 
+  algorithm2 TEXT, 
+  algorithm3 TEXT, 
+  algorithm4 TEXT,
   environment TEXT,
   tools TEXT,
   datas TEXT,
@@ -72,12 +55,33 @@ CREATE TABLE IF NOT EXISTS article_summary (
   ifteacher INT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Insert a default admin user (password is plaintext as in original project)
-INSERT INTO role (username, password, name, role)
-VALUES ('admin', '123456', 'Administrator', 'ADMIN')
-ON DUPLICATE KEY UPDATE username = username;
+-- processing_status table (tracks paper processing workflow)
+CREATE TABLE IF NOT EXISTS processing_status (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  task_id VARCHAR(64) UNIQUE NOT NULL,
+  file_name VARCHAR(512),
+  status VARCHAR(32) NOT NULL,
+  progress INT DEFAULT 0,
+  current_step VARCHAR(255),
+  error_message TEXT,
+  extracted_title VARCHAR(1024),
+  extracted_authors TEXT,
+  extracted_institution VARCHAR(255),
+  extracted_year VARCHAR(16),
+  extracted_source VARCHAR(255),
+  extracted_keywords TEXT,
+  extracted_doi VARCHAR(255),
+  extracted_abstract TEXT,
+  extracted_summary TEXT,
+  file_path VARCHAR(1024),
+  created_time DATETIME,
+  updated_time DATETIME,
+  completed_time DATETIME,
+  INDEX idx_task_id (task_id),
+  INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Example sample data (optional)
 INSERT INTO article_info (title, author, summary, pubtime)
-VALUES ('Sample Article', 'Test Author', 'This is a sample article created by init script.', '2025-01-01')
+VALUES ('Sample Article', 'Test Author', 'This is a sample article for the local research tool.', '2025-01-01')
 ON DUPLICATE KEY UPDATE title = title;
