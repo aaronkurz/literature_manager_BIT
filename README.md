@@ -1,22 +1,24 @@
 # Literature Manager - Simplified Local Research Tool
 
-A streamlined AI-powered literature management system designed for local research use. This tool helps researchers manage academic papers, extract insights using **local Ollama LLM (Mistral 3B)**, and visualize relationships through a knowledge graph.
+A streamlined AI-powered literature management system designed for local research use. This tool helps researchers manage academic papers, extract insights using **local Ollama LLM (Ministral-3)**, and visualize relationships through a knowledge graph.
 
 ## Key Features
 
 - **Simple PDF Upload**: Drag-and-drop interface, no manual data entry
 - **Auto-Metadata Extraction**: AI automatically extracts title, authors, abstract, etc.
-- **Local AI Processing**: Paper summarization using Ollama with Mistral 3B (3 billion parameter model)
+- **Local AI Processing**: Paper summarization using Ollama with **Ministral-3 (3B)** - 256K context window
 - **Processing Status**: Real-time progress tracking with approval workflow
 - **Knowledge Graph**: Visualize relationships between papers using Neo4j
 - **No Authentication**: Single-user local tool, no login required
+- **Vision Support**: Ministral-3 can analyze images in addition to text
+- **Multilingual**: Supports English, Chinese, Japanese, Korean, and dozens of other languages
 
 ## Recent Improvements (Dec 2025)
 
 **Fixed Issues:**
-- ✅ **Ollama API Error**: Fixed model name (`mistral:3b` not `ministral:3b`)
+- ✅ **Ollama API Error**: Fixed model name (`ministral-3:3b` is correct)
 - ✅ **Error Handling**: Added comprehensive logging and troubleshooting
-- ✅ **Context Management**: Truncate large texts for 3B model (~16k chars max)
+- ✅ **Context Management**: Optimized for 256K context window, truncate at 32K chars for efficiency
 
 **New Features:**
 - ✅ **Simplified Upload**: PDF-only, drag-and-drop, no manual fields
@@ -40,9 +42,9 @@ This starts:
 - Ollama (port 11434) - local AI service
 - Spring Boot backend (port 9090)
 
-### 2. Pull the Mistral 3B Model
+### 2. Pull the Ministral-3 Model
 
-**IMPORTANT**: The correct model name is `mistral:3b` (not ministral)
+**IMPORTANT**: The correct model name is `ministral-3:3b` (requires Ollama 0.13.1+)
 
 After services are running:
 
@@ -53,8 +55,14 @@ After services are running:
 Or manually:
 
 ```bash
-docker exec lm_ollama ollama pull mistral:3b
+docker exec lm_ollama ollama pull ministral-3:3b
 ```
+
+**Model Specifications:**
+- **Size**: 3GB (3 billion parameters)
+- **Context Window**: 256K tokens
+- **Capabilities**: Vision, multilingual, function calling, JSON output
+- **License**: Apache 2.0
 
 ### 3. Start the Frontend (Optional)
 
@@ -95,7 +103,8 @@ Access at: http://localhost:8080
 - Docker and Docker Compose
 - At least 4GB RAM (for Ollama + services)
 - Node.js 14+ and npm (for frontend development)
-- ~2GB disk space for Mistral 3B model
+- ~3GB disk space for Ministral-3 (3B) model
+- **Ollama 0.13.1+** (pre-release required for Ministral-3)
 
 ---
 
@@ -106,9 +115,10 @@ Access at: http://localhost:8080
 **Problem**: `POST "/api/chat" - 404 Not Found`
 
 **Solutions**:
-1. Check model is pulled: `docker exec lm_ollama ollama list`
-2. Pull correct model: `docker exec lm_ollama ollama pull mistral:3b`
-3. Check Ollama is running: `docker ps | grep ollama`
+1. Ensure Ollama 0.13.1+ is installed (Ministral-3 requirement)
+2. Check model is pulled: `docker exec lm_ollama ollama list`
+3. Pull correct model: `docker exec lm_ollama ollama pull ministral-3:3b`
+4. Check Ollama is running: `docker ps | grep ollama`
 
 ### Backend Hangs During Processing
 
@@ -117,8 +127,8 @@ Access at: http://localhost:8080
 **Solutions**:
 1. Check Ollama logs: `docker logs lm_ollama -f`
 2. Verify model loaded: `docker exec lm_ollama ollama list`
-3. Check paper size - very large PDFs may timeout
-4. System will truncate text to ~16k chars automatically
+3. Check paper size - system truncates at 32K chars for efficiency
+4. Ensure sufficient RAM (4GB+ recommended)
 
 ### Out of Memory
 
@@ -158,9 +168,10 @@ Access at: http://localhost:8080
 Key configuration file: `springboot/src/main/java/com/example/utils/Config.java`
 
 - **Ollama**: `OLLAMA_BASE_URL` (default: http://localhost:11434)
-- **Model**: `OLLAMA_MODEL` (mistral:3b)
-- **Context Window**: Auto-truncate to ~16k chars for 3B model
+- **Model**: `OLLAMA_MODEL` (ministral-3:3b)
+- **Context Window**: 256K tokens (truncated to 32K chars for efficiency)
 - **Metadata Extraction**: Specialized prompts for PDF parsing
+- **Vision Support**: Can analyze images in PDFs (future enhancement)
 
 ---
 
@@ -169,7 +180,7 @@ Key configuration file: `springboot/src/main/java/com/example/utils/Config.java`
 - **Backend**: Spring Boot with MyBatis
 - **Frontend**: Vue.js (simplified, no authentication)
 - **Databases**: MySQL (metadata), Neo4j (knowledge graph)
-- **AI/LLM**: Ollama with Mistral 3B (local, no API keys)
+- **AI/LLM**: Ollama with Ministral-3 (3B) - local, no API keys, 256K context
 - **File Processing**: Python scripts for PDF/TXT conversion
 
 ---
@@ -192,7 +203,7 @@ npm run serve
 
 ### Pull Latest Model
 ```bash
-docker exec lm_ollama ollama pull mistral:3b
+docker exec lm_ollama ollama pull ministral-3:3b
 ```
 
 ---

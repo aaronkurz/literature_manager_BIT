@@ -21,11 +21,11 @@ public class BigModelUtil {
 
     private static final Gson gson = new Gson();
 
-    // Ollama text generation with chunking for large texts
+    // Ollama text generation with context management
     public static String ollamaTextGeneration(String content) throws Exception {
-        // For large texts, truncate to ~4000 tokens (rough estimate: 1 token ≈ 4 chars)
-        // Mistral 3B has limited context window
-        int maxChars = 16000; // ~4000 tokens
+        // Ministral-3 has 256K context window, but for efficiency on 3B model,
+        // we still limit to avoid very long processing times on end-user hardware
+        int maxChars = 32000; // ~8000 tokens - conservative for 3B model
         if (content.length() > maxChars) {
             System.out.println("警告: 文本过长(" + content.length() + "字符), 截取前" + maxChars + "字符处理");
             content = content.substring(0, maxChars) + "\n...(内容已截断)";

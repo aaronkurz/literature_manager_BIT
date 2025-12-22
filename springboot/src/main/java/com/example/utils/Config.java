@@ -1,9 +1,10 @@
 package com.example.utils;
 
 public class Config {
-    // Ollama Configuration - Local LLM with Mistral 3B (note: it's "mistral" not "ministral")
+    // Ollama Configuration - Local LLM with Ministral-3 (3B model)
+    // Note: Requires Ollama 0.13.1+ (pre-release)
     public static final String OLLAMA_BASE_URL = System.getenv().getOrDefault("OLLAMA_BASE_URL", "http://localhost:11434");
-    public static final String OLLAMA_MODEL = "mistral:3b";
+    public static final String OLLAMA_MODEL = "ministral-3:3b";  // 3GB model with 256K context window
 
     // MySQL configuration — read from environment variables if available
     public static final String MYSQL_LINK = System.getenv().getOrDefault("MYSQL_URL", "jdbc:mysql://localhost:3306/manager?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8&allowPublicKeyRetrieval=true");

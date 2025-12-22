@@ -20,7 +20,7 @@
         </el-form-item>
         
         <el-form-item label="AI 模型">
-          <el-input value="Ollama - Ministral 3B" disabled></el-input>
+          <el-input value="Ollama - Ministral-3 (3B, 256K context)" disabled></el-input>
         </el-form-item>
         
         <el-form-item label="数据库">
