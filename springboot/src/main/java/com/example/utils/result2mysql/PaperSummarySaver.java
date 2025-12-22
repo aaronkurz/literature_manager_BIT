@@ -24,9 +24,9 @@ public class PaperSummarySaver {
                 throw new IllegalArgumentException("Invalid input - no JSON found");
             }
 
-            // 解析JSON
+            // 解析JSON成Map以便处理字段可能为字符串或数组/对象的情况
             ObjectMapper mapper = new ObjectMapper();
-            ArticleSummary summary = mapper.readValue(jsonString, ArticleSummary.class);
+            java.util.Map<String,Object> data = mapper.readValue(jsonString, new com.fasterxml.jackson.core.type.TypeReference<java.util.Map<String,Object>>(){});
 
             // 数据库连接
             conn = DriverManager.getConnection(DB_URL, USER, PASS);
@@ -42,46 +42,46 @@ public class PaperSummarySaver {
 
             PreparedStatement pstmt = conn.prepareStatement(sql);
 
-            // 设置参数
+            // 设置参数（使用 helper 将可能为数组/对象的字段转换为字符串）
             int index = 1;
             pstmt.setString(index++, model);
             pstmt.setString(index++, title);
-            pstmt.setString(index++, summary.summary);
-            pstmt.setString(index++, summary.short1);
-            pstmt.setString(index++, summary.short2);
-            pstmt.setString(index++, summary.short3);
-            pstmt.setString(index++, summary.short4);
-            pstmt.setString(index++, summary.short5);
-            pstmt.setString(index++, summary.short6);
-            pstmt.setString(index++, summary.mid1);
-            pstmt.setString(index++, summary.mid2);
-            pstmt.setString(index++, summary.mid3);
-            pstmt.setString(index++, summary.mid4);
-            pstmt.setString(index++, summary.mid5);
-            pstmt.setString(index++, summary.mid6);
-            pstmt.setString(index++, summary.long1);
-            pstmt.setString(index++, summary.long2);
-            pstmt.setString(index++, summary.long3);
-            pstmt.setString(index++, summary.long4);
-            pstmt.setString(index++, summary.long5);
-            pstmt.setString(index++, summary.long6);
-            pstmt.setString(index++, summary.target);
-            pstmt.setString(index++, summary.algmid1);
-            pstmt.setString(index++, summary.algmid2);
-            pstmt.setString(index++, summary.algmid3);
-            pstmt.setString(index++, summary.algmid4);
-            pstmt.setString(index++, summary.alglong1);
-            pstmt.setString(index++, summary.alglong2);
-            pstmt.setString(index++, summary.alglong3);
-            pstmt.setString(index++, summary.alglong4);
-            pstmt.setString(index++, summary.environment);
-            pstmt.setString(index++, summary.tools);
-            pstmt.setString(index++, summary.datas);
-            pstmt.setString(index++, summary.standard);
-            pstmt.setString(index++, summary.result);
-            pstmt.setString(index++, summary.future);
-            pstmt.setString(index++, summary.weekpoint);
-            pstmt.setString(index++, summary.keyword);
+            pstmt.setString(index++, getStringValue(data, "summary", mapper));
+            pstmt.setString(index++, getStringValue(data, "short1", mapper));
+            pstmt.setString(index++, getStringValue(data, "short2", mapper));
+            pstmt.setString(index++, getStringValue(data, "short3", mapper));
+            pstmt.setString(index++, getStringValue(data, "short4", mapper));
+            pstmt.setString(index++, getStringValue(data, "short5", mapper));
+            pstmt.setString(index++, getStringValue(data, "short6", mapper));
+            pstmt.setString(index++, getStringValue(data, "mid1", mapper));
+            pstmt.setString(index++, getStringValue(data, "mid2", mapper));
+            pstmt.setString(index++, getStringValue(data, "mid3", mapper));
+            pstmt.setString(index++, getStringValue(data, "mid4", mapper));
+            pstmt.setString(index++, getStringValue(data, "mid5", mapper));
+            pstmt.setString(index++, getStringValue(data, "mid6", mapper));
+            pstmt.setString(index++, getStringValue(data, "long1", mapper));
+            pstmt.setString(index++, getStringValue(data, "long2", mapper));
+            pstmt.setString(index++, getStringValue(data, "long3", mapper));
+            pstmt.setString(index++, getStringValue(data, "long4", mapper));
+            pstmt.setString(index++, getStringValue(data, "long5", mapper));
+            pstmt.setString(index++, getStringValue(data, "long6", mapper));
+            pstmt.setString(index++, getStringValue(data, "target", mapper));
+            pstmt.setString(index++, getStringValue(data, "algmid1", mapper));
+            pstmt.setString(index++, getStringValue(data, "algmid2", mapper));
+            pstmt.setString(index++, getStringValue(data, "algmid3", mapper));
+            pstmt.setString(index++, getStringValue(data, "algmid4", mapper));
+            pstmt.setString(index++, getStringValue(data, "alglong1", mapper));
+            pstmt.setString(index++, getStringValue(data, "alglong2", mapper));
+            pstmt.setString(index++, getStringValue(data, "alglong3", mapper));
+            pstmt.setString(index++, getStringValue(data, "alglong4", mapper));
+            pstmt.setString(index++, getStringValue(data, "environment", mapper));
+            pstmt.setString(index++, getStringValue(data, "tools", mapper));
+            pstmt.setString(index++, getStringValue(data, "datas", mapper));
+            pstmt.setString(index++, getStringValue(data, "standard", mapper));
+            pstmt.setString(index++, getStringValue(data, "result", mapper));
+            pstmt.setString(index++, getStringValue(data, "future", mapper));
+            pstmt.setString(index++, getStringValue(data, "weekpoint", mapper));
+            pstmt.setString(index++, getStringValue(data, "keyword", mapper));
             pstmt.setString(index++, ifteacher);
 
             // 执行插入
@@ -109,46 +109,31 @@ public class PaperSummarySaver {
         return null;
     }
 
-    // 内部类对应JSON结构
-    private static class ArticleSummary {
-        //public String model;
-        //public String title;
-        public String summary;
-        public String short1;
-        public String short2;
-        public String short3;
-        public String short4;
-        public String short5;
-        public String short6;
-        public String mid1;
-        public String mid2;
-        public String mid3;
-        public String mid4;
-        public String mid5;
-        public String mid6;
-        public String long1;
-        public String long2;
-        public String long3;
-        public String long4;
-        public String long5;
-        public String long6;
-        public String target;
-        public String algmid1;
-        public String algmid2;
-        public String algmid3;
-        public String algmid4;
-        public String alglong1;
-        public String alglong2;
-        public String alglong3;
-        public String alglong4;
-        public String environment;
-        public String tools;
-        public String datas;
-        public String standard;
-        public String result;
-        public String future;
-        public String weekpoint;
-        public String keyword;
+    // helper 将可能为数组/对象的字段转换为字符串
+    private static String getStringValue(java.util.Map<String,Object> data, String key, com.fasterxml.jackson.databind.ObjectMapper mapper) {
+        if (data == null || !data.containsKey(key)) return null;
+        Object val = data.get(key);
+        if (val == null) return null;
+        try {
+            if (val instanceof String) return (String) val;
+            if (val instanceof java.util.List) {
+                java.util.List<?> list = (java.util.List<?>) val;
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < list.size(); i++) {
+                    Object e = list.get(i);
+                    if (e instanceof String) sb.append((String) e);
+                    else sb.append(mapper.writeValueAsString(e));
+                    if (i < list.size() - 1) sb.append("\n");
+                }
+                return sb.toString();
+            }
+            if (val instanceof java.util.Map) {
+                return mapper.writeValueAsString(val);
+            }
+            return val.toString();
+        } catch (Exception e) {
+            return val.toString();
+        }
     }
 
     static {

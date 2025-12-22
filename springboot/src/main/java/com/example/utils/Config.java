@@ -51,14 +51,14 @@ public class Config {
     public static final String CAJ2PDF_MUTOOL_EXE = "E:\\manager\\springboot\\src\\main\\java\\com\\example\\utils\\Caj2pdf\\mutool.exe";
 
     //pdf转docx配置
-    public static final String PDF2DOCX_PY_SCRIPT = "E:\\manager\\springboot\\src\\main\\java\\com\\example\\utils\\pdf2docx\\pdf_converter.py"; // 相对路径
-    public static final int PDF2DOCX_TIMEOUT_MINUTES = 30;
+    public static final String PDF2DOCX_PY_SCRIPT = System.getenv().getOrDefault("PDF2DOCX_PY_SCRIPT", "/app/scripts/pdf_converter.py");
+    public static final int PDF2DOCX_TIMEOUT_MINUTES = Integer.parseInt(System.getenv().getOrDefault("PDF2DOCX_TIMEOUT_MINUTES", "30"));
 
     //pdf2txt配置
-    public static final String PDF2TXT_PY_SCRIPT = "E:\\manager\\springboot\\src\\main\\java\\com\\example\\utils\\pdf2txt\\pdf_to_text.py";
-    public static final int PDF2TXT_TIMEOUT_MINUTES = 30;
-    public static final String OCR_PATH = "E:\\manager\\springboot\\tesseractOCR";
-    public static final String LOG_PATH = "E:\\manager\\log";
+    public static final String PDF2TXT_PY_SCRIPT = System.getenv().getOrDefault("PDF2TXT_PY_SCRIPT", "/app/scripts/pdf_to_text.py");
+    public static final int PDF2TXT_TIMEOUT_MINUTES = Integer.parseInt(System.getenv().getOrDefault("PDF2TXT_TIMEOUT_MINUTES", "30"));
+    public static final String OCR_PATH = System.getenv().getOrDefault("OCR_PATH", "/usr/bin");
+    public static final String LOG_PATH = System.getenv().getOrDefault("LOG_PATH", "/app/log");
 
 
     public static final String JSON = """

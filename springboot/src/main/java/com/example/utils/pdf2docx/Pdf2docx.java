@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.concurrent.TimeUnit;
+import java.nio.charset.StandardCharsets;
 
 public class Pdf2docx {
     private static final String PY_SCRIPT = Config.PDF2DOCX_PY_SCRIPT; // Python脚本路径
@@ -75,11 +76,11 @@ public class Pdf2docx {
 
         // 使用绝对路径调用Python脚本
         String[] command = {
-                "python",
+                "python3",
                 "-u", // 强制无缓冲输出
                 PY_SCRIPT,
-                "\"" + pdfFile.getAbsolutePath() + "\"",
-                "\"" + docxFile.getAbsolutePath() + "\""
+                pdfFile.getAbsolutePath(),
+                docxFile.getAbsolutePath()
         };
 
         ProcessBuilder pb = new ProcessBuilder(command);
@@ -90,7 +91,7 @@ public class Pdf2docx {
         // 启动独立线程读取输出
         Thread outputThread = new Thread(() -> {
             try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(process.getInputStream(), "GBK"))) {
+                    new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     LogUtil_pdf2docx.log("[PY] " + line); // 将Python输出写入日志
