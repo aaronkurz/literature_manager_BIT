@@ -37,6 +37,12 @@ const routes = [
                 component: () => import('../views/front/Upload')
             },
             {
+                path: 'processing/:taskId',
+                name: 'ProcessingStatus',
+                meta: {name: '处理状态'},
+                component: () => import('../views/front/ProcessingStatus')
+            },
+            {
                 path: 'graph',
                 name: 'Graph',
                 meta: {name: '知识图谱'},

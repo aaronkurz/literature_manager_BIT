@@ -36,11 +36,13 @@
       <h3><i class="el-icon-info"></i> 处理流程</h3>
       <ol>
         <li>上传PDF文件</li>
-        <li>系统自动提取元数据（标题、作者、摘要等）</li>
-        <li>使用本地AI生成论文分析和摘要</li>
-        <li>自动添加到知识图谱</li>
+        <li>系统自动转换格式（PDF→TXT）</li>
+        <li>使用本地AI提取元数据（标题、作者、摘要等）</li>
+        <li>生成论文分析和摘要</li>
+        <li>查看并确认提取的信息</li>
+        <li>批准后自动添加到知识图谱</li>
       </ol>
-      <p class="note">注意：处理过程可能需要1-2分钟，请耐心等待...</p>
+      <p class="note">注意：处理过程可能需要1-2分钟，请在审核页面确认提取的信息后再添加到数据库</p>
     </div>
   </div>
 </template>
@@ -79,30 +81,25 @@ export default {
       const formData = new FormData();
       formData.append('paperFile', this.form.paperFile);
 
-      // Show processing message
-      const loadingMsg = this.$message({
-        message: '文件上传成功，正在后台处理... 处理完成后会自动添加到数据库',
-        type: 'info',
-        duration: 5000
-      });
-
       try {
         const response = await axios.post('http://localhost:9090/article/upload', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
         
-        loadingMsg.close();
-        this.$message.success('文件已成功提交！处理将在后台进行，完成后可在搜索页面查看');
-        
-        this.resetForm();
-        
-        // Optionally redirect to search page after a delay
-        setTimeout(() => {
-          this.$router.push('/front/home');
-        }, 2000);
-        
+        if (response.data.code === '200') {
+          const taskId = response.data.data.taskId;
+          this.$message.success('文件上传成功，正在处理...');
+          
+          // Redirect to processing status page
+          this.$router.push({
+            name: 'ProcessingStatus',
+            params: { taskId: taskId }
+          });
+        } else {
+          this.$message.error('上传失败：' + response.data.msg);
+          this.isSubmitting = false;
+        }
       } catch (error) {
-        loadingMsg.close();
         console.error('提交失败:', error);
         this.$message.error('提交失败：' + (error.response?.data?.msg || '服务器错误'));
         this.isSubmitting = false;
