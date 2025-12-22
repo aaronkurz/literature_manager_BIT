@@ -63,21 +63,12 @@ public class ArticleController {
         return Result.success(summaries); // 修改为返回列表
     }
 
-    // 其他方法保持不变
     @PostMapping("/upload")
     public Result<String> uploadArticle(
-            @RequestParam("token") String token,
             ArticleInfo articleInfo,
             @RequestParam("paperFile") MultipartFile paperFile,
             @RequestParam(value = "attachment", required = false) MultipartFile attachment) { // 修改为单个 MultipartFile
         try {
-            String userData = TokenUtils.verifyToken(token);
-            if (userData == null) {
-                return Result.error("401", "无效的token，请重新登录");
-            }
-            String userId = userData.split("-")[0];
-            articleInfo.setUserid(userId);
-
             String paperFilePath = saveFile(paperFile, "paper");
             articleInfo.setPatha(paperFilePath);
 

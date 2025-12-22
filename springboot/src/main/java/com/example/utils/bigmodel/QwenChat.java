@@ -52,7 +52,7 @@ public class QwenChat {
             HttpURLConnection connection = (HttpURLConnection) new URL("https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions").openConnection();
             connection.setRequestMethod("POST");
             connection.setRequestProperty("Content-Type", "application/json; utf-8");
-            connection.setRequestProperty("Authorization", "Bearer " + "sk-a10c3a06bb644fbea79f7de18dbf2b9e");
+            connection.setRequestProperty("Authorization", "Bearer " + Config.QWEN_API_KEY);
             connection.setDoOutput(true);
 
             // 写入请求体

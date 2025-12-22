@@ -27,15 +27,6 @@ public class ArticleInfo implements Serializable {
     private String pathdocx;
     private String pathtxt;
     private String pathpdf;
-    private String userid;
-
-    public String getUserid() {
-        return userid;
-    }
-
-    public void setUserid(String userid) {
-        this.userid = userid;
-    }
 
     public String getPathdocx() {
         return pathdocx;

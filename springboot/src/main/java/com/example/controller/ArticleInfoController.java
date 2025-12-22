@@ -1,11 +1,8 @@
 package com.example.controller;
 
 import com.example.common.Result;
-import com.example.common.enums.ResultCodeEnum;
-import com.example.entity.Account;
 import com.example.entity.ArticleInfo;
 import com.example.service.impl.ArticleInfoService;
-import com.example.utils.TokenUtils;
 import com.github.pagehelper.PageInfo;
 import org.springframework.web.bind.annotation.*;
 
@@ -61,24 +58,6 @@ public class ArticleInfoController {
     public Result selectPage(ArticleInfo articleInfo,
                              @RequestParam(defaultValue = "1") Integer pageNum,
                              @RequestParam(defaultValue = "10") Integer pageSize) {
-        PageInfo<ArticleInfo> page = articleInfoService.selectPage(articleInfo, pageNum, pageSize);
-        return Result.success(page);
-    }
-
-    @GetMapping("/selectByUserId")
-    public Result selectByUserId(
-            @RequestParam(defaultValue = "1") Integer pageNum,
-            @RequestParam(defaultValue = "10") Integer pageSize,
-            @RequestParam(required = false) String title) { // 新增 title 参数
-        Account currentUser = TokenUtils.getCurrentUser();
-        if (currentUser.getId() == null) {
-            return Result.error(ResultCodeEnum.USER_NOT_LOGIN);
-        }
-        ArticleInfo articleInfo = new ArticleInfo();
-        articleInfo.setUserid(currentUser.getId().toString());
-        if (title != null && !title.trim().isEmpty()) { // 检查 title 是否非空
-            articleInfo.setTitle(title);
-        }
         PageInfo<ArticleInfo> page = articleInfoService.selectPage(articleInfo, pageNum, pageSize);
         return Result.success(page);
     }
