@@ -24,9 +24,9 @@
 
       <el-form-item class="button-group">
         <el-button type="primary" native-type="submit" :loading="isSubmitting" :disabled="!form.paperFile">
-          {{ isSubmitting ? '上传中...' : '上传并处理' }}
+          {{ isSubmitting ? '上传并处理中...' : '上传并处理' }}
         </el-button>
-        <el-button type="warning" @click="resetForm">
+        <el-button type="warning" @click="resetForm" :disabled="isSubmitting">
           重置
         </el-button>
       </el-form-item>
@@ -38,9 +38,9 @@
         <li>上传PDF文件</li>
         <li>系统自动提取元数据（标题、作者、摘要等）</li>
         <li>使用本地AI生成论文分析和摘要</li>
-        <li>查看并确认结果</li>
-        <li>添加到知识图谱</li>
+        <li>自动添加到知识图谱</li>
       </ol>
+      <p class="note">注意：处理过程可能需要1-2分钟，请耐心等待...</p>
     </div>
   </div>
 </template>
@@ -79,22 +79,30 @@ export default {
       const formData = new FormData();
       formData.append('paperFile', this.form.paperFile);
 
+      // Show processing message
+      const loadingMsg = this.$message({
+        message: '文件上传成功，正在后台处理... 处理完成后会自动添加到数据库',
+        type: 'info',
+        duration: 5000
+      });
+
       try {
         const response = await axios.post('http://localhost:9090/article/upload', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
         
-        this.$message.success('文件上传成功，正在处理...');
-        
-        // Redirect to processing status page with paper title
-        const paperTitle = this.form.paperFile.name.replace('.pdf', '');
-        this.$router.push({
-          name: 'ProcessingStatus',
-          params: { title: paperTitle }
-        });
+        loadingMsg.close();
+        this.$message.success('文件已成功提交！处理将在后台进行，完成后可在搜索页面查看');
         
         this.resetForm();
+        
+        // Optionally redirect to search page after a delay
+        setTimeout(() => {
+          this.$router.push('/front/home');
+        }, 2000);
+        
       } catch (error) {
+        loadingMsg.close();
         console.error('提交失败:', error);
         this.$message.error('提交失败：' + (error.response?.data?.msg || '服务器错误'));
         this.isSubmitting = false;
@@ -171,6 +179,15 @@ h2 {
 .info-box li {
   margin-bottom: 8px;
   line-height: 1.6;
+}
+
+.info-box .note {
+  margin-top: 15px;
+  padding: 10px;
+  background: #fff3cd;
+  border-left: 3px solid #ffc107;
+  color: #856404;
+  font-size: 14px;
 }
 
 /deep/ .el-upload-dragger {
