@@ -79,6 +79,9 @@ public class Neo4jLoader {
 
     private boolean processRecord(Session session, Map<String, String> row) {
             LogUtil_Neo4jLoader.log("Row keys: " + row.keySet());
+            LogUtil_Neo4jLoader.log("检查custom_concept字段:");
+            LogUtil_Neo4jLoader.log("  custom_concept1: " + (row.containsKey("custom_concept1") ? "存在" : "不存在"));
+            LogUtil_Neo4jLoader.log("  Custom_concept1: " + (row.containsKey("Custom_concept1") ? "存在" : "不存在"));
             String title = row.getOrDefault("Title", "").trim();
             LogUtil_Neo4jLoader.log("Resolved title: '" + title + "'");
         if (title.isEmpty()) {
@@ -204,9 +207,13 @@ public class Neo4jLoader {
      * Process custom concepts and create relationships
      */
     private void processCustomConcepts(Session session, Long paperId, Map<String, String> row) {
+        LogUtil_Neo4jLoader.log("开始处理自定义概念，论文ID=" + paperId);
         for (int i = 1; i <= 3; i++) {
             String customConceptKey = "custom_concept" + i;
             String customConceptJson = row.get(customConceptKey);
+            
+            LogUtil_Neo4jLoader.log("检查自定义概念字段: " + customConceptKey + ", 值: " + 
+                (customConceptJson == null ? "NULL" : (customConceptJson.isEmpty() ? "EMPTY" : customConceptJson)));
             
             if (customConceptJson == null || customConceptJson.trim().isEmpty()) {
                 continue;
@@ -217,18 +224,23 @@ public class Neo4jLoader {
                 com.google.gson.JsonObject json = com.google.gson.JsonParser.parseString(customConceptJson).getAsJsonObject();
                 
                 if (!json.has("relationshipName") || !json.has("matchingConcepts")) {
+                    LogUtil_Neo4jLoader.log("JSON缺少必需字段: " + customConceptJson);
                     continue;
                 }
                 
                 // Check for null values
                 if (json.get("relationshipName").isJsonNull() || json.get("matchingConcepts").isJsonNull()) {
+                    LogUtil_Neo4jLoader.log("JSON字段为null: " + customConceptJson);
                     continue;
                 }
                 
                 String relationshipName = json.get("relationshipName").getAsString();
                 com.google.gson.JsonArray concepts = json.getAsJsonArray("matchingConcepts");
                 
+                LogUtil_Neo4jLoader.log("解析自定义概念: 关系=" + relationshipName + ", 概念数=" + concepts.size());
+                
                 if (relationshipName == null || relationshipName.trim().isEmpty() || concepts.size() == 0) {
+                    LogUtil_Neo4jLoader.log("关系名为空或概念列表为空");
                     continue;
                 }
                 
@@ -246,6 +258,7 @@ public class Neo4jLoader {
                 
             } catch (Exception e) {
                 LogUtil_Neo4jLoader.log("解析自定义概念失败: " + customConceptKey + " - " + e.getMessage());
+                e.printStackTrace();
             }
         }
     }
