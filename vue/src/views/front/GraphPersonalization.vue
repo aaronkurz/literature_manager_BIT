@@ -117,15 +117,25 @@ export default {
       this.loading = true;
       try {
         const response = await axios.get('http://localhost:9090/custom-concepts/list');
+        
+        // Reset concepts to default empty state first
+        this.concepts = [
+          { id: null, relationshipName: '', conceptsList: [], displayOrder: 1 },
+          { id: null, relationshipName: '', conceptsList: [], displayOrder: 2 },
+          { id: null, relationshipName: '', conceptsList: [], displayOrder: 3 }
+        ];
+        
         if (response.data.code === '200' && response.data.data) {
           response.data.data.forEach(concept => {
             const index = concept.displayOrder - 1;
-            this.concepts[index] = {
-              id: concept.id,
-              relationshipName: concept.relationshipName,
-              conceptsList: concept.concepts ? concept.concepts.split(';').filter(c => c.trim()) : [],
-              displayOrder: concept.displayOrder
-            };
+            if (index >= 0 && index < 3) {
+              this.concepts[index] = {
+                id: concept.id,
+                relationshipName: concept.relationshipName,
+                conceptsList: concept.concepts ? concept.concepts.split(';').filter(c => c.trim()) : [],
+                displayOrder: concept.displayOrder
+              };
+            }
           });
         }
       } catch (error) {

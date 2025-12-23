@@ -104,9 +104,6 @@ public class AfterUpload {
             status.setExtractedDoi(getStringValue(metadata, "doi"));
             status.setExtractedAbstract(getStringValue(metadata, "summary"));
             
-            // Extract custom concepts if any are defined
-            extractCustomConcepts(status, metadataText);
-            
             System.out.println("元数据提取完成:");
             System.out.println("  标题: " + status.getExtractedTitle());
             System.out.println("  作者: " + status.getExtractedAuthors());
@@ -114,6 +111,15 @@ public class AfterUpload {
             
             // Use the extracted abstract as the summary (no need for second AI call)
             status.setExtractedSummary(status.getExtractedAbstract());
+            
+            // Update status to show we're extracting custom concepts (if any are defined)
+            status.setStatus("EXTRACTING");
+            status.setProgress(60);
+            status.setCurrentStep("正在识别自定义概念...");
+            processingStatusService.updateStatus(status);
+            
+            // Extract custom concepts if any are defined
+            extractCustomConcepts(status, metadataText);
             
             // Update status: Pending approval
             status.setStatus("PENDING_APPROVAL");
@@ -159,6 +165,7 @@ public class AfterUpload {
     /**
      * Extract custom concepts from paper content using Ollama
      * This is called after metadata extraction to identify which user-defined concepts apply
+     * Optimized to reduce timeout issues
      */
     private void extractCustomConcepts(ProcessingStatus status, String content) {
         try {
@@ -172,7 +179,10 @@ public class AfterUpload {
             
             System.out.println("开始提取自定义概念，共 " + customConcepts.size() + " 个关系");
             
-            // Process each custom concept
+            // Use a shorter content for faster processing (first 4000 chars should be enough)
+            String shortContent = content.length() > 4000 ? content.substring(0, 4000) : content;
+            
+            // Process each custom concept with timeout protection
             for (int i = 0; i < customConcepts.size(); i++) {
                 CustomConcept concept = customConcepts.get(i);
                 String relationshipName = concept.getRelationshipName();
@@ -180,39 +190,44 @@ public class AfterUpload {
                 
                 System.out.println("提取自定义概念 " + (i + 1) + ": " + relationshipName + " - " + concepts);
                 
-                // Build prompt for this relationship
-                String prompt = buildCustomConceptPrompt(relationshipName, concepts, content);
-                
-                // Call LLM
-                String response = BigModelUtil.ollamaTextGeneration(prompt);
-                JsonObject result = parseJsonSafely(response);
-                
-                // Extract matching concepts
-                JsonArray matchingConcepts = new JsonArray();
-                if (result.has("concepts") && result.get("concepts").isJsonArray()) {
-                    matchingConcepts = result.getAsJsonArray("concepts");
+                try {
+                    // Build optimized prompt for this relationship
+                    String prompt = buildCustomConceptPrompt(relationshipName, concepts, shortContent);
+                    
+                    // Call LLM with timeout protection
+                    String response = BigModelUtil.ollamaTextGeneration(prompt);
+                    JsonObject result = parseJsonSafely(response);
+                    
+                    // Extract matching concepts
+                    JsonArray matchingConcepts = new JsonArray();
+                    if (result.has("concepts") && result.get("concepts").isJsonArray()) {
+                        matchingConcepts = result.getAsJsonArray("concepts");
+                    }
+                    
+                    // Build JSON result for this custom concept
+                    JsonObject customConceptResult = new JsonObject();
+                    customConceptResult.addProperty("relationshipName", relationshipName);
+                    customConceptResult.add("matchingConcepts", matchingConcepts);
+                    
+                    // Store in appropriate field
+                    String resultJson = gson.toJson(customConceptResult);
+                    switch (i) {
+                        case 0:
+                            status.setExtractedCustomConcept1(resultJson);
+                            break;
+                        case 1:
+                            status.setExtractedCustomConcept2(resultJson);
+                            break;
+                        case 2:
+                            status.setExtractedCustomConcept3(resultJson);
+                            break;
+                    }
+                    
+                    System.out.println("自定义概念 " + (i + 1) + " 提取结果: " + resultJson);
+                } catch (Exception conceptError) {
+                    System.err.println("提取自定义概念 " + (i + 1) + " 失败: " + conceptError.getMessage());
+                    // Continue with next concept even if this one fails
                 }
-                
-                // Build JSON result for this custom concept
-                JsonObject customConceptResult = new JsonObject();
-                customConceptResult.addProperty("relationshipName", relationshipName);
-                customConceptResult.add("matchingConcepts", matchingConcepts);
-                
-                // Store in appropriate field
-                String resultJson = gson.toJson(customConceptResult);
-                switch (i) {
-                    case 0:
-                        status.setExtractedCustomConcept1(resultJson);
-                        break;
-                    case 1:
-                        status.setExtractedCustomConcept2(resultJson);
-                        break;
-                    case 2:
-                        status.setExtractedCustomConcept3(resultJson);
-                        break;
-                }
-                
-                System.out.println("自定义概念 " + (i + 1) + " 提取结果: " + resultJson);
             }
             
         } catch (Exception e) {
@@ -223,21 +238,17 @@ public class AfterUpload {
     }
     
     /**
-     * Build prompt for custom concept extraction
+     * Build optimized prompt for custom concept extraction
      */
     private String buildCustomConceptPrompt(String relationshipName, List<String> concepts, String content) {
         StringBuilder prompt = new StringBuilder();
-        prompt.append("你是一个学术论文分析专家。请根据以下论文内容，判断该论文是否使用了以下概念。\n\n");
+        prompt.append("从以下论文摘要中，判断该论文是否使用了这些概念。\n\n");
         prompt.append("关系类型: ").append(relationshipName).append("\n");
         prompt.append("可能的概念: ").append(String.join(", ", concepts)).append("\n\n");
-        prompt.append("请严格按照以下JSON格式返回，不要添加任何Markdown标记或额外说明：\n\n");
-        prompt.append("{\n");
-        prompt.append("  \"concepts\": [\"匹配的概念1\", \"匹配的概念2\"]\n");
-        prompt.append("}\n\n");
-        prompt.append("如果论文中没有使用上述任何概念，请返回空数组: {\"concepts\": []}\n");
-        prompt.append("只返回在上述列表中存在的概念名称，且名称必须完全匹配。\n\n");
-        prompt.append("论文内容（前8000字符）：\n\n");
-        prompt.append(content.length() > 8000 ? content.substring(0, 8000) : content);
+        prompt.append("只返回JSON格式（不要markdown标记）：{\"concepts\": [\"匹配的概念1\", \"匹配的概念2\"]}\n");
+        prompt.append("如果没有匹配，返回：{\"concepts\": []}\n");
+        prompt.append("只返回列表中存在的概念名称。\n\n");
+        prompt.append("论文内容：\n").append(content);
         
         return prompt.toString();
     }
