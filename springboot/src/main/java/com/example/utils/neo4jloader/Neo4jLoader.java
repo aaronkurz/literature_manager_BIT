@@ -78,12 +78,14 @@ public class Neo4jLoader {
     }
 
     private boolean processRecord(Session session, Map<String, String> row) {
-            LogUtil_Neo4jLoader.log("Row keys: " + row.keySet());
-            LogUtil_Neo4jLoader.log("检查custom_concept字段:");
-            LogUtil_Neo4jLoader.log("  custom_concept1: " + (row.containsKey("custom_concept1") ? "存在" : "不存在"));
-            LogUtil_Neo4jLoader.log("  Custom_concept1: " + (row.containsKey("Custom_concept1") ? "存在" : "不存在"));
+            System.out.println("=== 处理记录 ===");
+            System.out.println("Row keys: " + row.keySet());
+            System.out.println("检查custom_concept字段:");
+            System.out.println("  custom_concept1: " + (row.containsKey("custom_concept1") ? "存在 - " + row.get("custom_concept1") : "不存在"));
+            System.out.println("  custom_concept2: " + (row.containsKey("custom_concept2") ? "存在 - " + row.get("custom_concept2") : "不存在"));
+            System.out.println("  custom_concept3: " + (row.containsKey("custom_concept3") ? "存在 - " + row.get("custom_concept3") : "不存在"));
             String title = row.getOrDefault("Title", "").trim();
-            LogUtil_Neo4jLoader.log("Resolved title: '" + title + "'");
+            System.out.println("Resolved title: '" + title + "'");
         if (title.isEmpty()) {
             LogUtil_Neo4jLoader.log("记录无标题，跳过");
             return true;
@@ -207,12 +209,14 @@ public class Neo4jLoader {
      * Process custom concepts and create relationships
      */
     private void processCustomConcepts(Session session, Long paperId, Map<String, String> row) {
-        LogUtil_Neo4jLoader.log("开始处理自定义概念，论文ID=" + paperId);
+        System.out.println("=== 开始处理自定义概念 ===");
+        System.out.println("论文ID: " + paperId);
+        
         for (int i = 1; i <= 3; i++) {
             String customConceptKey = "custom_concept" + i;
             String customConceptJson = row.get(customConceptKey);
             
-            LogUtil_Neo4jLoader.log("检查自定义概念字段: " + customConceptKey + ", 值: " + 
+            System.out.println("检查自定义概念字段: " + customConceptKey + ", 值: " + 
                 (customConceptJson == null ? "NULL" : (customConceptJson.isEmpty() ? "EMPTY" : customConceptJson)));
             
             if (customConceptJson == null || customConceptJson.trim().isEmpty()) {
@@ -224,23 +228,23 @@ public class Neo4jLoader {
                 com.google.gson.JsonObject json = com.google.gson.JsonParser.parseString(customConceptJson).getAsJsonObject();
                 
                 if (!json.has("relationshipName") || !json.has("matchingConcepts")) {
-                    LogUtil_Neo4jLoader.log("JSON缺少必需字段: " + customConceptJson);
+                    System.err.println("JSON缺少必需字段: " + customConceptJson);
                     continue;
                 }
                 
                 // Check for null values
                 if (json.get("relationshipName").isJsonNull() || json.get("matchingConcepts").isJsonNull()) {
-                    LogUtil_Neo4jLoader.log("JSON字段为null: " + customConceptJson);
+                    System.err.println("JSON字段为null: " + customConceptJson);
                     continue;
                 }
                 
                 String relationshipName = json.get("relationshipName").getAsString();
                 com.google.gson.JsonArray concepts = json.getAsJsonArray("matchingConcepts");
                 
-                LogUtil_Neo4jLoader.log("解析自定义概念: 关系=" + relationshipName + ", 概念数=" + concepts.size());
+                System.out.println("解析自定义概念: 关系=" + relationshipName + ", 概念数=" + concepts.size());
                 
                 if (relationshipName == null || relationshipName.trim().isEmpty() || concepts.size() == 0) {
-                    LogUtil_Neo4jLoader.log("关系名为空或概念列表为空");
+                    System.err.println("关系名为空或概念列表为空");
                     continue;
                 }
                 
@@ -250,17 +254,18 @@ public class Neo4jLoader {
                         String conceptValue = concepts.get(j).getAsString();
                         if (conceptValue != null && !conceptValue.trim().isEmpty()) {
                             createCustomConceptRelationship(session, paperId, relationshipName, conceptValue);
-                            LogUtil_Neo4jLoader.log("创建自定义概念关系: 论文ID=" + paperId + 
+                            System.out.println("创建自定义概念关系: 论文ID=" + paperId + 
                                 ", 关系=" + relationshipName + ", 概念=" + conceptValue);
                         }
                     }
                 }
                 
             } catch (Exception e) {
-                LogUtil_Neo4jLoader.log("解析自定义概念失败: " + customConceptKey + " - " + e.getMessage());
+                System.err.println("解析自定义概念失败: " + customConceptKey + " - " + e.getMessage());
                 e.printStackTrace();
             }
         }
+        System.out.println("=== 自定义概念处理完成 ===");
     }
     
     /**
@@ -329,6 +334,10 @@ public class Neo4jLoader {
     }
 
     public static void runNeo4jLoader(boolean ifDeleteAllNodeFirst,String title) {
+        System.out.println("=== 开始运行 Neo4jLoader ===");
+        System.out.println("  ifDeleteAllNodeFirst: " + ifDeleteAllNodeFirst);
+        System.out.println("  title: " + title);
+        
         Neo4jLoader loader = new Neo4jLoader(Config.NEO4J_LINK, Config.NEO4J_USERNAME, Config.NEO4J_PASSWORD );
         if (ifDeleteAllNodeFirst) {
             try (Session session = driver.session()) {
@@ -341,10 +350,13 @@ public class Neo4jLoader {
             }
         }
         try {
+            System.out.println("调用 loadDataFromMySQL...");
             loader.loadDataFromMySQL(Config.MYSQL_LINK, Config.MYSQL_USERNAME, Config.MYSQL_PASSWORD,title,ifDeleteAllNodeFirst);
             LogUtil_Neo4jLoader.log("数据导入完成");
+            System.out.println("=== Neo4jLoader 完成 ===");
         } catch (Exception e) {
             LogUtil_Neo4jLoader.log("数据导入失败: " + e.getMessage());
+            System.err.println("Neo4j数据导入失败: " + e.getMessage());
             e.printStackTrace();
         } finally {
             loader.close();
