@@ -64,6 +64,30 @@
         </el-form-item>
       </el-form>
 
+      <!-- Custom Concepts Section -->
+      <div v-if="hasCustomConcepts" class="custom-concepts-section">
+        <h3><i class="el-icon-star-on"></i> 自定义概念识别</h3>
+        <el-card 
+          v-for="(concept, index) in customConcepts" 
+          :key="index" 
+          class="concept-card"
+          shadow="hover"
+        >
+          <div class="concept-header">
+            <strong>{{ concept.relationshipName }}</strong>
+          </div>
+          <div class="concept-values">
+            <el-tag 
+              v-for="(value, vIndex) in concept.matchingConcepts" 
+              :key="vIndex"
+              type="success"
+              size="medium"
+            >{{ value }}</el-tag>
+            <span v-if="concept.matchingConcepts.length === 0" class="no-match">未识别到匹配概念</span>
+          </div>
+        </el-card>
+      </div>
+
       <div class="action-buttons">
         <el-button type="success" size="large" @click="approve" :loading="isApproving">
           <i class="el-icon-check"></i> 批准并添加到数据库
@@ -110,7 +134,10 @@ export default {
         extractedKeywords: '',
         extractedDoi: '',
         extractedAbstract: '',
-        extractedSummary: ''
+        extractedSummary: '',
+        extractedCustomConcept1: '',
+        extractedCustomConcept2: '',
+        extractedCustomConcept3: ''
       },
       editableMetadata: {
         title: '',
@@ -122,6 +149,7 @@ export default {
         doi: '',
         summary: ''
       },
+      customConcepts: [],
       pollingInterval: null,
       isApproving: false,
       isRejecting: false
@@ -144,6 +172,9 @@ export default {
       if (this.status.status === 'FAILED') return 'exception';
       if (this.status.status === 'APPROVED') return 'success';
       return null;
+    },
+    hasCustomConcepts() {
+      return this.customConcepts.length > 0;
     }
   },
   mounted() {
@@ -189,6 +220,27 @@ export default {
               doi: this.status.extractedDoi || '',
               summary: this.status.extractedAbstract || ''
             };
+            
+            // Parse custom concepts
+            this.customConcepts = [];
+            for (let i = 1; i <= 3; i++) {
+              const conceptKey = `extractedCustomConcept${i}`;
+              const conceptJson = this.status[conceptKey];
+              if (conceptJson) {
+                try {
+                  const concept = JSON.parse(conceptJson);
+                  if (concept.relationshipName) {
+                    this.customConcepts.push({
+                      relationshipName: concept.relationshipName,
+                      matchingConcepts: concept.matchingConcepts || []
+                    });
+                  }
+                } catch (e) {
+                  console.error('解析自定义概念失败:', e);
+                }
+              }
+            }
+            
             this.stopPolling(); // Stop polling when waiting for user action
           }
           
@@ -214,7 +266,11 @@ export default {
           source: this.editableMetadata.source,
           keyword: this.editableMetadata.keyword,
           doi: this.editableMetadata.doi,
-          summary: this.editableMetadata.summary
+          summary: this.editableMetadata.summary,
+          // Include custom concepts from status
+          customConcept1: this.status.extractedCustomConcept1,
+          customConcept2: this.status.extractedCustomConcept2,
+          customConcept3: this.status.extractedCustomConcept3
         };
         
         const response = await axios.post(`http://localhost:9090/article/approve/${this.taskId}`, articleInfo);
@@ -325,6 +381,46 @@ export default {
 
 .metadata-form {
   margin-bottom: 20px;
+}
+
+.custom-concepts-section {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 2px dashed #e0e0e0;
+}
+
+.custom-concepts-section h3 {
+  color: #67C23A;
+  margin-bottom: 20px;
+  font-size: 18px;
+}
+
+.concept-card {
+  margin-bottom: 15px;
+}
+
+.concept-header {
+  font-size: 16px;
+  color: #303133;
+  margin-bottom: 10px;
+}
+
+.concept-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.concept-values .el-tag {
+  font-size: 14px;
+  padding: 6px 12px;
+}
+
+.no-match {
+  color: #909399;
+  font-size: 14px;
+  font-style: italic;
 }
 
 .action-buttons {

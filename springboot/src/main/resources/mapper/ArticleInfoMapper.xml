@@ -3,8 +3,8 @@
 <mapper namespace="com.example.mapper.ArticleInfoMapper">
 
     <insert id="insert" parameterType="com.example.entity.ArticleInfo">
-        insert into article_info (srcdatabase, title, author, organ, source, keyword, summary, pubtime, firstduty, fund, year, pagecount, clc, url, doi)
-        values (#{srcDatabase}, #{title}, #{author}, #{organ}, #{source}, #{keyword}, #{summary}, #{pubTime}, #{firstDuty}, #{fund}, #{year}, #{pageCount}, #{clc}, #{url}, #{doi})
+        insert into article_info (srcdatabase, title, author, organ, source, keyword, summary, pubtime, firstduty, fund, year, pagecount, clc, url, doi, custom_concept1, custom_concept2, custom_concept3)
+        values (#{srcDatabase}, #{title}, #{author}, #{organ}, #{source}, #{keyword}, #{summary}, #{pubTime}, #{firstDuty}, #{fund}, #{year}, #{pageCount}, #{clc}, #{url}, #{doi}, #{customConcept1}, #{customConcept2}, #{customConcept3})
     </insert>
 
     <delete id="deleteById" parameterType="java.lang.Integer">
@@ -33,6 +33,9 @@
             <if test="clc != null">clc = #{clc},</if>
             <if test="url != null">url = #{url},</if>
             <if test="doi != null">doi = #{doi},</if>
+            <if test="customConcept1 != null">custom_concept1 = #{customConcept1},</if>
+            <if test="customConcept2 != null">custom_concept2 = #{customConcept2},</if>
+            <if test="customConcept3 != null">custom_concept3 = #{customConcept3},</if>
         </set>
         where id = #{id}
     </update>

@@ -49,6 +49,12 @@ const routes = [
                 component: () => import('../views/front/Graph')
             },
             {
+                path: 'graph-personalization',
+                name: 'GraphPersonalization',
+                meta: {name: '图谱个性化'},
+                component: () => import('../views/front/GraphPersonalization')
+            },
+            {
                 path: 'settings',
                 name: 'Settings',
                 meta: {name: '设置'},

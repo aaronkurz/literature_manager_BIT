@@ -24,7 +24,10 @@ CREATE TABLE IF NOT EXISTS article_info (
   pathb VARCHAR(1024),
   pathdocx VARCHAR(1024),
   pathtxt VARCHAR(1024),
-  pathpdf VARCHAR(1024)
+  pathpdf VARCHAR(1024),
+  custom_concept1 TEXT,
+  custom_concept2 TEXT,
+  custom_concept3 TEXT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- article_summary table (simplified to one summary length)
@@ -73,6 +76,9 @@ CREATE TABLE IF NOT EXISTS processing_status (
   extracted_doi VARCHAR(255),
   extracted_abstract TEXT,
   extracted_summary TEXT,
+  extracted_custom_concept1 TEXT,
+  extracted_custom_concept2 TEXT,
+  extracted_custom_concept3 TEXT,
   file_path VARCHAR(1024),
   created_time DATETIME,
   updated_time DATETIME,
@@ -81,7 +87,13 @@ CREATE TABLE IF NOT EXISTS processing_status (
   INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Example sample data (optional)
-INSERT INTO article_info (title, author, summary, pubtime)
-VALUES ('Sample Article', 'Test Author', 'This is a sample article for the local research tool.', '2025-01-01')
-ON DUPLICATE KEY UPDATE title = title;
+-- custom_concepts table (user-defined concepts for graph personalization)
+CREATE TABLE IF NOT EXISTS custom_concepts (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  relationship_name VARCHAR(128) NOT NULL,
+  concepts TEXT NOT NULL,
+  display_order INT NOT NULL,
+  created_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_display_order (display_order)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

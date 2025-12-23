@@ -27,6 +27,12 @@ public class ArticleInfo implements Serializable {
     private String pathdocx;
     private String pathtxt;
     private String pathpdf;
+    
+    // Custom concepts extracted during processing
+    // Each field stores JSON: {"relationshipName": "method", "matchingConcepts": ["RCT", "Cohort"]}
+    private String customConcept1;
+    private String customConcept2;
+    private String customConcept3;
 
     public String getPathdocx() {
         return pathdocx;
@@ -105,7 +111,12 @@ public class ArticleInfo implements Serializable {
     }
 
     public void setOrgan(String organ) {
-        this.organ = organ;
+        if (organ != null && organ.length() > 255) {
+            System.out.println("警告: organ字段超过255字符，已截断 (原长度: " + organ.length() + ")");
+            this.organ = organ.substring(0, 255);
+        } else {
+            this.organ = organ;
+        }
     }
 
     public String getSource() {
@@ -113,7 +124,12 @@ public class ArticleInfo implements Serializable {
     }
 
     public void setSource(String source) {
-        this.source = source;
+        if (source != null && source.length() > 255) {
+            System.out.println("警告: source字段超过255字符，已截断 (原长度: " + source.length() + ")");
+            this.source = source.substring(0, 255);
+        } else {
+            this.source = source;
+        }
     }
 
     public String getKeyword() {
@@ -194,5 +210,29 @@ public class ArticleInfo implements Serializable {
 
     public void setDoi(String doi) {
         this.doi = doi;
+    }
+    
+    public String getCustomConcept1() {
+        return customConcept1;
+    }
+    
+    public void setCustomConcept1(String customConcept1) {
+        this.customConcept1 = customConcept1;
+    }
+    
+    public String getCustomConcept2() {
+        return customConcept2;
+    }
+    
+    public void setCustomConcept2(String customConcept2) {
+        this.customConcept2 = customConcept2;
+    }
+    
+    public String getCustomConcept3() {
+        return customConcept3;
+    }
+    
+    public void setCustomConcept3(String customConcept3) {
+        this.customConcept3 = customConcept3;
     }
 }
