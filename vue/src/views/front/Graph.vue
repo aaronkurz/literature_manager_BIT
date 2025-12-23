@@ -65,6 +65,20 @@
             </el-row>
           </el-card>
 
+          <!-- Custom Concepts Query Section -->
+          <el-card v-if="customConceptQueries.length > 0" class="control-card" shadow="hover">
+            <h3 slot="header">自定义概念查询</h3>
+            <el-row :gutter="15" class="button-grid">
+              <el-col :span="8" v-for="query in customConceptQueries" :key="query.label">
+                <el-button
+                    type="success"
+                    @click="runQuery(query.cypher)"
+                    class="query-button"
+                >{{ query.label }}</el-button>
+              </el-col>
+            </el-row>
+          </el-card>
+
           <!-- Neo4j Browser Link -->
           <el-card class="control-card" shadow="hover">
             <h3 slot="header">Neo4j Browser</h3>
@@ -108,7 +122,8 @@ export default {
           "关键词": { label: "name", color: "#FFEEAD", size: 15 },
           "基金": { label: "name", color: "#FFA07A", size: 20 },
           "分类号": { label: "code", color: "#9B59B6", size: 15 },
-          "来源库": { label: "name", color: "#D8BFD8", size: 20 }
+          "来源库": { label: "name", color: "#D8BFD8", size: 20 },
+          "自定义概念": { label: "name", color: "#67C23A", size: 25 }
         },
         relationships: {
           "作者": { color: "#FF4500", thickness: "weight", caption: true },
@@ -117,7 +132,8 @@ export default {
           "关键词": { color: "#FFD700", caption: true },
           "资助": { color: "#32CD32", curvature: 0.3, caption: true },
           "分类": { color: "#8A2BE2", thickness: 1.5, caption: true },
-          "来源库": { color: "#DDA0DD", dash: [5, 5], caption: true }
+          "来源库": { color: "#DDA0DD", dash: [5, 5], caption: true },
+          "自定义概念关系": { color: "#67C23A", thickness: 2.5, caption: true }
         },
         initialCypher: "MATCH p=()-->() RETURN p LIMIT 50"
       },
@@ -129,7 +145,8 @@ export default {
         { label: "关键词", class: "keyword" },
         { label: "基金", class: "fund" },
         { label: "分类号", class: "category" },
-        { label: "来源库", class: "source" }
+        { label: "来源库", class: "source" },
+        { label: "自定义概念", class: "custom-concept" }
       ],
       relationQueries: [
         { label: "全部关系", cypher: "MATCH p=()-->() RETURN p LIMIT 50" },
@@ -152,16 +169,47 @@ export default {
         { label: "单位", cypher: "MATCH (n:`单位`) RETURN n LIMIT 25" },
         { label: "来源库", cypher: "MATCH (n:`来源库`) RETURN n LIMIT 25" },
         { label: "论文", cypher: "MATCH (n:`论文`) RETURN n LIMIT 25" }
-      ]
+      ],
+      customConceptQueries: []
     };
   },
   mounted() {
     this.initializeViz();
+    this.loadCustomConcepts();
   },
   methods: {
     initializeViz() {
       this.viz = new NeoVis(this.config);
       this.viz.render();
+    },
+    async loadCustomConcepts() {
+      try {
+        const response = await axios.get('http://localhost:9090/custom-concepts/list');
+        if (response.data.code === '200' && response.data.data) {
+          const concepts = response.data.data;
+          this.customConceptQueries = [];
+          
+          // Generate queries for each custom concept
+          concepts.forEach(concept => {
+            // Query for all papers with this relationship type
+            this.customConceptQueries.push({
+              label: `全部${concept.relationshipName}`,
+              cypher: `MATCH p=(论文:\`论文\`)-[:\`自定义概念关系\`]->(c:\`自定义概念\`) WHERE c.relationship = '${concept.relationshipName}' RETURN p LIMIT 50`
+            });
+            
+            // Query for each specific concept value
+            const conceptsList = concept.concepts.split(';').filter(c => c.trim());
+            conceptsList.forEach(conceptValue => {
+              this.customConceptQueries.push({
+                label: `${conceptValue}`,
+                cypher: `MATCH p=(论文:\`论文\`)-[:\`自定义概念关系\`]->(c:\`自定义概念\` {name: '${conceptValue}', relationship: '${concept.relationshipName}'}) RETURN p LIMIT 50`
+              });
+            });
+          });
+        }
+      } catch (error) {
+        console.error('加载自定义概念失败:', error);
+      }
     },
     runQuery(cypher) {
       this.cypherQuery = cypher;
@@ -315,6 +363,10 @@ export default {
 
 .source {
   background: #FB7E81;
+}
+
+.custom-concept {
+  background: #67C23A;
 }
 
 .button-grid {

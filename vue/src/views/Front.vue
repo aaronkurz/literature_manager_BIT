@@ -10,6 +10,7 @@
         <div class="front-header-nav">
           <el-menu :default-active="$route.path" mode="horizontal" router>
             <el-menu-item index="/front/graph">知识图谱</el-menu-item>
+            <el-menu-item index="/front/graph-personalization">图谱个性化</el-menu-item>
             <el-menu-item index="/front/home">搜索</el-menu-item>
             <el-menu-item index="/front/upload">论文上传</el-menu-item>
           </el-menu>
