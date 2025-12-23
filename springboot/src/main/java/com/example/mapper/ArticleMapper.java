@@ -18,10 +18,11 @@ public interface ArticleMapper {
     List<ArticleSummary> selectSummariesByTitle(String title);
 
     @Insert("INSERT INTO article_info(srcdatabase, title, author, organ, source, keyword, pubtime, " +
-            "firstduty, fund, year, pagecount, clc, url, doi, summary, patha, pathb, pathdocx, pathpdf, pathtxt) " +
+            "firstduty, fund, year, pagecount, clc, url, doi, summary, patha, pathb, pathdocx, pathpdf, pathtxt, " +
+            "custom_concept1, custom_concept2, custom_concept3) " +
             "VALUES(#{srcDatabase}, #{title}, #{author}, #{organ}, #{source}, #{keyword}, #{pubTime}, " +
             "#{firstDuty}, #{fund}, #{year}, #{pageCount}, #{clc}, #{url}, #{doi}, #{summary}, #{patha}, #{pathb}, " +
-            "#{pathdocx}, #{pathpdf}, #{pathtxt})")
+            "#{pathdocx}, #{pathpdf}, #{pathtxt}, #{customConcept1}, #{customConcept2}, #{customConcept3})")
     void insertArticle(ArticleInfo articleInfo);
 
     // 新增方法：查询文件路径
