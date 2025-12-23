@@ -111,7 +111,12 @@ public class ArticleInfo implements Serializable {
     }
 
     public void setOrgan(String organ) {
-        this.organ = organ;
+        if (organ != null && organ.length() > 255) {
+            System.out.println("警告: organ字段超过255字符，已截断 (原长度: " + organ.length() + ")");
+            this.organ = organ.substring(0, 255);
+        } else {
+            this.organ = organ;
+        }
     }
 
     public String getSource() {
@@ -119,7 +124,12 @@ public class ArticleInfo implements Serializable {
     }
 
     public void setSource(String source) {
-        this.source = source;
+        if (source != null && source.length() > 255) {
+            System.out.println("警告: source字段超过255字符，已截断 (原长度: " + source.length() + ")");
+            this.source = source.substring(0, 255);
+        } else {
+            this.source = source;
+        }
     }
 
     public String getKeyword() {

@@ -94,12 +94,12 @@ public class AfterUpload {
             System.out.println("调用Ollama提取元数据 (输入长度: " + metadataText.length() + " 字符)");
             JsonObject metadata = extractMetadata(metadataText);
             
-            // Store extracted metadata in status
+            // Store extracted metadata in status (with truncation for long fields)
             status.setExtractedTitle(getStringValue(metadata, "title"));
             status.setExtractedAuthors(getStringValue(metadata, "author"));
-            status.setExtractedInstitution(getStringValue(metadata, "organ"));
+            status.setExtractedInstitution(getStringValueWithLimit(metadata, "organ", 255));
             status.setExtractedYear(getStringValue(metadata, "year"));
-            status.setExtractedSource(getStringValue(metadata, "source"));
+            status.setExtractedSource(getStringValueWithLimit(metadata, "source", 255));
             status.setExtractedKeywords(getStringValue(metadata, "keyword"));
             status.setExtractedDoi(getStringValue(metadata, "doi"));
             status.setExtractedAbstract(getStringValue(metadata, "summary"));
@@ -303,6 +303,18 @@ public class AfterUpload {
             System.err.println("获取字段 " + key + " 失败: " + e.getMessage());
         }
         return "未提取";
+    }
+    
+    /**
+     * Get string value with maximum length truncation
+     */
+    private String getStringValueWithLimit(JsonObject json, String key, int maxLength) {
+        String value = getStringValue(json, key);
+        if (value != null && value.length() > maxLength) {
+            System.out.println("警告: 字段 '" + key + "' 超过最大长度 " + maxLength + "，已截断 (原长度: " + value.length() + ")");
+            return value.substring(0, maxLength);
+        }
+        return value;
     }
     
     /**
