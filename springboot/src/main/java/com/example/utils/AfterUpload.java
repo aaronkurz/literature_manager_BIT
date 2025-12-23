@@ -1,11 +1,14 @@
 package com.example.utils;
 
 import com.example.entity.ArticleInfo;
+import com.example.entity.CustomConcept;
 import com.example.entity.ProcessingStatus;
 import com.example.service.ArticleService;
+import com.example.service.impl.CustomConceptService;
 import com.example.service.impl.ProcessingStatusService;
 import com.example.utils.bigmodel.BigModelUtil;
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +17,7 @@ import org.springframework.stereotype.Component;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.List;
 
 import static com.example.utils.Caj2pdf.Caj2pdf.runCajToPdf;
 import static com.example.utils.neo4jloader.Neo4jLoader.runNeo4jLoader;
@@ -32,6 +36,9 @@ public class AfterUpload {
     
     @Autowired
     private ProcessingStatusService processingStatusService;
+    
+    @Autowired
+    private CustomConceptService customConceptService;
     
     private final Gson gson = new Gson();
     
@@ -97,6 +104,9 @@ public class AfterUpload {
             status.setExtractedDoi(getStringValue(metadata, "doi"));
             status.setExtractedAbstract(getStringValue(metadata, "summary"));
             
+            // Extract custom concepts if any are defined
+            extractCustomConcepts(status, metadataText);
+            
             System.out.println("元数据提取完成:");
             System.out.println("  标题: " + status.getExtractedTitle());
             System.out.println("  作者: " + status.getExtractedAuthors());
@@ -146,6 +156,92 @@ public class AfterUpload {
         return parseJsonSafely(response);
     }
     
+    /**
+     * Extract custom concepts from paper content using Ollama
+     * This is called after metadata extraction to identify which user-defined concepts apply
+     */
+    private void extractCustomConcepts(ProcessingStatus status, String content) {
+        try {
+            // Get all custom concepts
+            List<CustomConcept> customConcepts = customConceptService.getAllConcepts();
+            
+            if (customConcepts.isEmpty()) {
+                System.out.println("没有自定义概念配置，跳过自定义概念提取");
+                return;
+            }
+            
+            System.out.println("开始提取自定义概念，共 " + customConcepts.size() + " 个关系");
+            
+            // Process each custom concept
+            for (int i = 0; i < customConcepts.size(); i++) {
+                CustomConcept concept = customConcepts.get(i);
+                String relationshipName = concept.getRelationshipName();
+                List<String> concepts = concept.getConceptsList();
+                
+                System.out.println("提取自定义概念 " + (i + 1) + ": " + relationshipName + " - " + concepts);
+                
+                // Build prompt for this relationship
+                String prompt = buildCustomConceptPrompt(relationshipName, concepts, content);
+                
+                // Call LLM
+                String response = BigModelUtil.ollamaTextGeneration(prompt);
+                JsonObject result = parseJsonSafely(response);
+                
+                // Extract matching concepts
+                JsonArray matchingConcepts = new JsonArray();
+                if (result.has("concepts") && result.get("concepts").isJsonArray()) {
+                    matchingConcepts = result.getAsJsonArray("concepts");
+                }
+                
+                // Build JSON result for this custom concept
+                JsonObject customConceptResult = new JsonObject();
+                customConceptResult.addProperty("relationshipName", relationshipName);
+                customConceptResult.add("matchingConcepts", matchingConcepts);
+                
+                // Store in appropriate field
+                String resultJson = gson.toJson(customConceptResult);
+                switch (i) {
+                    case 0:
+                        status.setExtractedCustomConcept1(resultJson);
+                        break;
+                    case 1:
+                        status.setExtractedCustomConcept2(resultJson);
+                        break;
+                    case 2:
+                        status.setExtractedCustomConcept3(resultJson);
+                        break;
+                }
+                
+                System.out.println("自定义概念 " + (i + 1) + " 提取结果: " + resultJson);
+            }
+            
+        } catch (Exception e) {
+            System.err.println("提取自定义概念失败: " + e.getMessage());
+            e.printStackTrace();
+            // Don't fail the whole process if custom concept extraction fails
+        }
+    }
+    
+    /**
+     * Build prompt for custom concept extraction
+     */
+    private String buildCustomConceptPrompt(String relationshipName, List<String> concepts, String content) {
+        StringBuilder prompt = new StringBuilder();
+        prompt.append("你是一个学术论文分析专家。请根据以下论文内容，判断该论文是否使用了以下概念。\n\n");
+        prompt.append("关系类型: ").append(relationshipName).append("\n");
+        prompt.append("可能的概念: ").append(String.join(", ", concepts)).append("\n\n");
+        prompt.append("请严格按照以下JSON格式返回，不要添加任何Markdown标记或额外说明：\n\n");
+        prompt.append("{\n");
+        prompt.append("  \"concepts\": [\"匹配的概念1\", \"匹配的概念2\"]\n");
+        prompt.append("}\n\n");
+        prompt.append("如果论文中没有使用上述任何概念，请返回空数组: {\"concepts\": []}\n");
+        prompt.append("只返回在上述列表中存在的概念名称，且名称必须完全匹配。\n\n");
+        prompt.append("论文内容（前8000字符）：\n\n");
+        prompt.append(content.length() > 8000 ? content.substring(0, 8000) : content);
+        
+        return prompt.toString();
+    }
+
 
     /**
      * Safely parse JSON from Ollama response, handling various formats
@@ -202,6 +298,11 @@ public class AfterUpload {
             articleInfo.setPathpdf(oripath + ".pdf");
             articleInfo.setPathdocx(oripath + ".docx");
             articleInfo.setPathtxt(oripath + ".txt");
+            
+            // Copy custom concepts from status to article info
+            articleInfo.setCustomConcept1(status.getExtractedCustomConcept1());
+            articleInfo.setCustomConcept2(status.getExtractedCustomConcept2());
+            articleInfo.setCustomConcept3(status.getExtractedCustomConcept3());
             
             // Save article info
             articleService.saveArticle(articleInfo);

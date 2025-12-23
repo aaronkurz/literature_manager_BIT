@@ -15,7 +15,9 @@ public interface ProcessingStatusMapper {
             "error_message=#{errorMessage}, extracted_title=#{extractedTitle}, extracted_authors=#{extractedAuthors}, " +
             "extracted_institution=#{extractedInstitution}, extracted_year=#{extractedYear}, extracted_source=#{extractedSource}, " +
             "extracted_keywords=#{extractedKeywords}, extracted_doi=#{extractedDoi}, extracted_abstract=#{extractedAbstract}, " +
-            "extracted_summary=#{extractedSummary}, updated_time=NOW() WHERE task_id=#{taskId}")
+            "extracted_summary=#{extractedSummary}, extracted_custom_concept1=#{extractedCustomConcept1}, " +
+            "extracted_custom_concept2=#{extractedCustomConcept2}, extracted_custom_concept3=#{extractedCustomConcept3}, " +
+            "updated_time=NOW() WHERE task_id=#{taskId}")
     int updateByTaskId(ProcessingStatus status);
     
     @Update("UPDATE processing_status SET completed_time=NOW() WHERE task_id=#{taskId}")

@@ -192,6 +192,69 @@ public class Neo4jLoader {
             createSrcDatabaseRelationship(session, paperId, srcDatabase.trim());
             LogUtil_Neo4jLoader.log("创建来源库关系: 论文ID=" + paperId + ", 来源库=" + srcDatabase);
         }
+        
+        // 处理自定义概念
+        processCustomConcepts(session, paperId, row);
+    }
+    
+    /**
+     * Process custom concepts and create relationships
+     */
+    private void processCustomConcepts(Session session, Long paperId, Map<String, String> row) {
+        for (int i = 1; i <= 3; i++) {
+            String customConceptKey = "custom_concept" + i;
+            String customConceptJson = row.get(customConceptKey);
+            
+            if (customConceptJson == null || customConceptJson.trim().isEmpty()) {
+                continue;
+            }
+            
+            try {
+                // Parse JSON: {"relationshipName": "method", "matchingConcepts": ["RCT", "Cohort"]}
+                com.google.gson.JsonObject json = com.google.gson.JsonParser.parseString(customConceptJson).getAsJsonObject();
+                
+                if (!json.has("relationshipName") || !json.has("matchingConcepts")) {
+                    continue;
+                }
+                
+                String relationshipName = json.get("relationshipName").getAsString();
+                com.google.gson.JsonArray concepts = json.getAsJsonArray("matchingConcepts");
+                
+                if (concepts.size() == 0) {
+                    continue;
+                }
+                
+                // Create relationship for each matching concept
+                for (int j = 0; j < concepts.size(); j++) {
+                    String conceptValue = concepts.get(j).getAsString();
+                    createCustomConceptRelationship(session, paperId, relationshipName, conceptValue);
+                    LogUtil_Neo4jLoader.log("创建自定义概念关系: 论文ID=" + paperId + 
+                        ", 关系=" + relationshipName + ", 概念=" + conceptValue);
+                }
+                
+            } catch (Exception e) {
+                LogUtil_Neo4jLoader.log("解析自定义概念失败: " + customConceptKey + " - " + e.getMessage());
+            }
+        }
+    }
+    
+    /**
+     * Create custom concept relationship
+     */
+    private void createCustomConceptRelationship(Session session, Long paperId, String relationshipName, String conceptValue) {
+        // Using dynamic relationship type is not directly supported in Cypher, 
+        // so we'll create a generic CUSTOM_CONCEPT relationship with properties
+        String query = "MATCH (p:论文) WHERE id(p) = $paperId " +
+                "MERGE (c:自定义概念 {name: $conceptValue, relationship: $relationshipName}) " +
+                "MERGE (p)-[r:自定义概念关系]->(c) " +
+                "SET r.type = $relationshipName";
+        
+        Map<String, Object> params = new HashMap<>();
+        params.put("paperId", paperId);
+        params.put("conceptValue", conceptValue);
+        params.put("relationshipName", relationshipName);
+        
+        session.run(query, params);
     }
 
     // 以下关系创建方法保持不变

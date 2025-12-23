@@ -25,6 +25,11 @@ public class ProcessingStatus {
     private String extractedAbstract;
     private String extractedSummary;
     
+    // Extracted custom concepts (user-defined relationships)
+    private String extractedCustomConcept1;  // JSON: {"relationshipName": "method", "concepts": ["RCT", "Cohort"]}
+    private String extractedCustomConcept2;
+    private String extractedCustomConcept3;
+    
     // Processing info
     private String filePath;
     private Date createdTime;
@@ -192,5 +197,29 @@ public class ProcessingStatus {
     
     public void setCompletedTime(Date completedTime) {
         this.completedTime = completedTime;
+    }
+    
+    public String getExtractedCustomConcept1() {
+        return extractedCustomConcept1;
+    }
+    
+    public void setExtractedCustomConcept1(String extractedCustomConcept1) {
+        this.extractedCustomConcept1 = extractedCustomConcept1;
+    }
+    
+    public String getExtractedCustomConcept2() {
+        return extractedCustomConcept2;
+    }
+    
+    public void setExtractedCustomConcept2(String extractedCustomConcept2) {
+        this.extractedCustomConcept2 = extractedCustomConcept2;
+    }
+    
+    public String getExtractedCustomConcept3() {
+        return extractedCustomConcept3;
+    }
+    
+    public void setExtractedCustomConcept3(String extractedCustomConcept3) {
+        this.extractedCustomConcept3 = extractedCustomConcept3;
     }
 }

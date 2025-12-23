@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mapper.CustomConceptMapper">
+
+    <insert id="insert" parameterType="com.example.entity.CustomConcept" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO custom_concepts (relationship_name, concepts, display_order, created_time)
+        VALUES (#{relationshipName}, #{concepts}, #{displayOrder}, NOW())
+    </insert>
+
+    <update id="updateById" parameterType="com.example.entity.CustomConcept">
+        UPDATE custom_concepts
+        SET relationship_name = #{relationshipName},
+            concepts = #{concepts},
+            display_order = #{displayOrder},
+            updated_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById" parameterType="java.lang.Integer">
+        DELETE FROM custom_concepts WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteByDisplayOrder" parameterType="java.lang.Integer">
+        DELETE FROM custom_concepts WHERE display_order = #{displayOrder}
+    </delete>
+
+    <select id="selectAll" resultType="com.example.entity.CustomConcept">
+        SELECT * FROM custom_concepts ORDER BY display_order ASC
+    </select>
+
+    <select id="selectById" resultType="com.example.entity.CustomConcept">
+        SELECT * FROM custom_concepts WHERE id = #{id}
+    </select>
+
+    <select id="selectByDisplayOrder" resultType="com.example.entity.CustomConcept">
+        SELECT * FROM custom_concepts WHERE display_order = #{displayOrder}
+    </select>
+
+    <select id="countAll" resultType="int">
+        SELECT COUNT(*) FROM custom_concepts
+    </select>
+
+</mapper>

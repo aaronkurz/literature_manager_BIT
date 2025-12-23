@@ -24,7 +24,10 @@ CREATE TABLE IF NOT EXISTS article_info (
   pathb VARCHAR(1024),
   pathdocx VARCHAR(1024),
   pathtxt VARCHAR(1024),
-  pathpdf VARCHAR(1024)
+  pathpdf VARCHAR(1024),
+  custom_concept1 TEXT,
+  custom_concept2 TEXT,
+  custom_concept3 TEXT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- article_summary table (simplified to one summary length)
@@ -80,6 +83,23 @@ CREATE TABLE IF NOT EXISTS processing_status (
   INDEX idx_task_id (task_id),
   INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- custom_concepts table (user-defined concepts for graph personalization)
+CREATE TABLE IF NOT EXISTS custom_concepts (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  relationship_name VARCHAR(128) NOT NULL,
+  concepts TEXT NOT NULL,
+  display_order INT NOT NULL,
+  created_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_display_order (display_order)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Add custom concept fields to processing_status table
+ALTER TABLE processing_status 
+  ADD COLUMN IF NOT EXISTS extracted_custom_concept1 TEXT,
+  ADD COLUMN IF NOT EXISTS extracted_custom_concept2 TEXT,
+  ADD COLUMN IF NOT EXISTS extracted_custom_concept3 TEXT;
 
 -- Example sample data (optional)
 INSERT INTO article_info (title, author, summary, pubtime)
