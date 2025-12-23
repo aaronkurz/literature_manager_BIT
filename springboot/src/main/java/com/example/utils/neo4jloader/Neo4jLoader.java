@@ -217,19 +217,28 @@ public class Neo4jLoader {
                     continue;
                 }
                 
+                // Check for null values
+                if (json.get("relationshipName").isJsonNull() || json.get("matchingConcepts").isJsonNull()) {
+                    continue;
+                }
+                
                 String relationshipName = json.get("relationshipName").getAsString();
                 com.google.gson.JsonArray concepts = json.getAsJsonArray("matchingConcepts");
                 
-                if (concepts.size() == 0) {
+                if (relationshipName == null || relationshipName.trim().isEmpty() || concepts.size() == 0) {
                     continue;
                 }
                 
                 // Create relationship for each matching concept
                 for (int j = 0; j < concepts.size(); j++) {
-                    String conceptValue = concepts.get(j).getAsString();
-                    createCustomConceptRelationship(session, paperId, relationshipName, conceptValue);
-                    LogUtil_Neo4jLoader.log("创建自定义概念关系: 论文ID=" + paperId + 
-                        ", 关系=" + relationshipName + ", 概念=" + conceptValue);
+                    if (!concepts.get(j).isJsonNull()) {
+                        String conceptValue = concepts.get(j).getAsString();
+                        if (conceptValue != null && !conceptValue.trim().isEmpty()) {
+                            createCustomConceptRelationship(session, paperId, relationshipName, conceptValue);
+                            LogUtil_Neo4jLoader.log("创建自定义概念关系: 论文ID=" + paperId + 
+                                ", 关系=" + relationshipName + ", 概念=" + conceptValue);
+                        }
+                    }
                 }
                 
             } catch (Exception e) {

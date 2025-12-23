@@ -419,53 +419,6 @@ export default {
   font-style: italic;
 }
 
-  font-size: 18px;
-}
-
-.metadata-form {
-  margin-bottom: 20px;
-}
-
-.custom-concepts-section {
-  margin-top: 30px;
-  padding-top: 20px;
-  border-top: 2px dashed #e0e0e0;
-}
-
-.custom-concepts-section h3 {
-  color: #67C23A;
-  margin-bottom: 20px;
-  font-size: 18px;
-}
-
-.concept-card {
-  margin-bottom: 15px;
-}
-
-.concept-header {
-  font-size: 16px;
-  color: #303133;
-  margin-bottom: 10px;
-}
-
-.concept-values {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-}
-
-.concept-values .el-tag {
-  font-size: 14px;
-  padding: 6px 12px;
-}
-
-.no-match {
-  color: #909399;
-  font-size: 14px;
-  font-style: italic;
-}
-
 .action-buttons {
   text-align: center;
   margin-top: 30px;
