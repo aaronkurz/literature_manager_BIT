@@ -199,7 +199,8 @@ export default {
         
         if (response.data.code === '200') {
           this.$message.success('保存成功');
-          await this.loadConcepts(); // Reload to get ID
+          // Reload to get the saved ID and ensure data is fresh
+          await this.loadConcepts();
         } else {
           this.$message.error(response.data.msg || '保存失败');
         }

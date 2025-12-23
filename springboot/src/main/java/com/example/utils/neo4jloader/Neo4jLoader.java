@@ -86,10 +86,11 @@ public class Neo4jLoader {
             return true;
         }
 
-        // 提取并处理作者列表
+        // 提取并处理作者列表 (限制最多5个作者)
         List<String> authors = Arrays.stream(row.getOrDefault("Author", "").split(";"))
                 .map(String::trim)
                 .filter(a -> !a.isEmpty())
+                .limit(5)  // 限制最多5个作者
                 .sorted()
                 .collect(Collectors.toList());
 
@@ -104,13 +105,15 @@ public class Neo4jLoader {
         Long paperId = createPaper(session, row);
         LogUtil_Neo4jLoader.log("创建论文节点成功: ID=" + paperId + ", 标题=" + title);
 
-        // 处理作者关系
+        // 处理作者关系 (限制最多5个作者)
         String[] authorArray = row.getOrDefault("Author", "").split(";");
+        int authorCount = 0;
         for (String author : authorArray) {
             author = author.trim();
-            if (!author.isEmpty()) {
+            if (!author.isEmpty() && authorCount < 5) {
                 createAuthorRelationship(session, paperId, author, row);
                 LogUtil_Neo4jLoader.log("创建作者关系: 论文ID=" + paperId + ", 作者=" + author);
+                authorCount++;
             }
         }
 

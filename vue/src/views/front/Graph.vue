@@ -153,6 +153,7 @@ export default {
         { label: "论文-作者", cypher: "MATCH p=()-[r:`作者`]->() RETURN p LIMIT 50" },
         { label: "论文-关键词", cypher: "MATCH p=()-[r:`关键词`]->() RETURN p LIMIT 50" },
         { label: "论文-分类", cypher: "MATCH p=()-[r:`分类`]->() RETURN p LIMIT 50" },
+        { label: "论文-概念", cypher: "MATCH p=(论文:`论文`)-[r:`自定义概念关系`]->(c:`自定义概念`) RETURN p, r, c LIMIT 50" },
         { label: "作者-文献来源", cypher: "MATCH p=()-[r:`所属`]->() RETURN p LIMIT 50" },
         { label: "论文-来源库", cypher: "MATCH p=()-[r:`来源库`]->() RETURN p LIMIT 50" },
         { label: "基金-论文", cypher: "MATCH p=()-[r:`资助`]->() RETURN p LIMIT 50" },
@@ -168,7 +169,8 @@ export default {
         { label: "文献来源", cypher: "MATCH (n:`文献来源`) RETURN n LIMIT 25" },
         { label: "单位", cypher: "MATCH (n:`单位`) RETURN n LIMIT 25" },
         { label: "来源库", cypher: "MATCH (n:`来源库`) RETURN n LIMIT 25" },
-        { label: "论文", cypher: "MATCH (n:`论文`) RETURN n LIMIT 25" }
+        { label: "论文", cypher: "MATCH (n:`论文`) RETURN n LIMIT 25" },
+        { label: "自定义概念", cypher: "MATCH (n:`自定义概念`) RETURN n LIMIT 25" }
       ],
       customConceptQueries: []
     };
