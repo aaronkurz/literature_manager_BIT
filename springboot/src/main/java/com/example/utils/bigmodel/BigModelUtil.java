@@ -75,10 +75,13 @@ public class BigModelUtil {
         System.out.println("模型: " + OLLAMA_MODEL);
         
         try {
+            System.out.println("发送 HTTP POST 请求...");
             HttpResponse<String> response = Unirest.post(OLLAMA_BASE_URL + "/api/chat")
                     .header("Content-Type", "application/json")
                     .body(requestBody.toString())
                     .asString();
+            
+            System.out.println("收到 HTTP 响应，状态码: " + response.getStatus());
             
             if (response.getStatus() != 200) {
                 String errorMsg = "Ollama API错误: HTTP " + response.getStatus();
@@ -89,7 +92,12 @@ public class BigModelUtil {
             }
             
             System.out.println("Ollama响应: " + response.getStatus() + " OK");
-            return parseResponse(response.getBody());
+            System.out.println("响应体长度: " + (response.getBody() != null ? response.getBody().length() : "null"));
+            
+            String result = parseResponse(response.getBody());
+            System.out.println("解析后内容长度: " + (result != null ? result.length() : "null"));
+            
+            return result;
             
         } catch (Exception e) {
             System.err.println("Ollama API调用失败: " + e.getMessage());
@@ -97,6 +105,7 @@ public class BigModelUtil {
             System.err.println("  1. Ollama服务是否运行: docker ps | grep ollama");
             System.err.println("  2. 模型是否已下载: docker exec lm_ollama ollama list");
             System.err.println("  3. URL是否正确: " + OLLAMA_BASE_URL);
+            e.printStackTrace();
             throw e;
         }
     }
@@ -106,22 +115,34 @@ public class BigModelUtil {
      */
     private static String parseResponse(String jsonResponse) {
         try {
+            System.out.println("开始解析 Ollama 响应...");
             JsonObject jsonObject = gson.fromJson(jsonResponse, JsonObject.class);
             
             if (!jsonObject.has("message")) {
+                System.err.println("响应中缺少'message'字段");
                 throw new Exception("响应中缺少'message'字段");
             }
             
             JsonObject message = jsonObject.getAsJsonObject("message");
             if (!message.has("content")) {
+                System.err.println("消息中缺少'content'字段");
                 throw new Exception("消息中缺少'content'字段");
             }
             
-            return message.get("content").getAsString();
+            String content = message.get("content").getAsString();
+            System.out.println("成功提取内容，长度: " + content.length());
+            
+            return content;
             
         } catch (Exception e) {
             System.err.println("解析Ollama响应失败: " + e.getMessage());
-            System.err.println("原始响应: " + jsonResponse);
+            System.err.println("原始响应长度: " + (jsonResponse != null ? jsonResponse.length() : "null"));
+            if (jsonResponse != null && jsonResponse.length() < 1000) {
+                System.err.println("原始响应: " + jsonResponse);
+            } else {
+                System.err.println("原始响应（前500字符）: " + (jsonResponse != null ? jsonResponse.substring(0, Math.min(500, jsonResponse.length())) : "null"));
+            }
+            e.printStackTrace();
             throw new RuntimeException(e);
         }
     }

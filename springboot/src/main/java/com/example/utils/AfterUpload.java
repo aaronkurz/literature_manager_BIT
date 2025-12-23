@@ -144,6 +144,7 @@ public class AfterUpload {
      * Extract metadata from paper content using Ollama
      */
     private JsonObject extractMetadata(String content) throws Exception {
+        System.out.println("=== 开始提取元数据 ===");
         String prompt = "你是一个学术论文元数据提取专家。请从下面的论文文本中提取元数据，并严格按照以下JSON格式返回，不要添加任何Markdown标记或额外说明：\n\n" +
             "{\n" +
             "  \"title\": \"论文标题\",\n" +
@@ -158,8 +159,15 @@ public class AfterUpload {
             "如果某个字段无法提取，请使用空字符串\"\"。现在开始提取以下论文的元数据：\n\n" +
             content;
         
+        System.out.println("调用 BigModelUtil.ollamaTextGeneration...");
         String response = BigModelUtil.ollamaTextGeneration(prompt);
-        return parseJsonSafely(response);
+        System.out.println("BigModelUtil 返回，响应长度: " + (response != null ? response.length() : "null"));
+        
+        JsonObject result = parseJsonSafely(response);
+        System.out.println("JSON 解析完成，字段数: " + result.size());
+        System.out.println("=== 元数据提取完成 ===");
+        
+        return result;
     }
     
     /**
