@@ -330,20 +330,32 @@ public class AfterUpload {
             articleInfo.setPathdocx(oripath + ".docx");
             articleInfo.setPathtxt(oripath + ".txt");
             
-            // Copy custom concepts from status to article info
-            System.out.println("从 ProcessingStatus 复制自定义概念:");
-            System.out.println("  extractedCustomConcept1: " + status.getExtractedCustomConcept1());
-            System.out.println("  extractedCustomConcept2: " + status.getExtractedCustomConcept2());
-            System.out.println("  extractedCustomConcept3: " + status.getExtractedCustomConcept3());
+            // Copy custom concepts from status to article info (only if not already set from frontend)
+            System.out.println("处理自定义概念:");
+            System.out.println("  从前端接收:");
+            System.out.println("    customConcept1: " + articleInfo.getCustomConcept1());
+            System.out.println("    customConcept2: " + articleInfo.getCustomConcept2());
+            System.out.println("    customConcept3: " + articleInfo.getCustomConcept3());
+            System.out.println("  从 ProcessingStatus 提取:");
+            System.out.println("    extractedCustomConcept1: " + status.getExtractedCustomConcept1());
+            System.out.println("    extractedCustomConcept2: " + status.getExtractedCustomConcept2());
+            System.out.println("    extractedCustomConcept3: " + status.getExtractedCustomConcept3());
             
-            articleInfo.setCustomConcept1(status.getExtractedCustomConcept1());
-            articleInfo.setCustomConcept2(status.getExtractedCustomConcept2());
-            articleInfo.setCustomConcept3(status.getExtractedCustomConcept3());
+            // Use values from frontend if present, otherwise fallback to status
+            if (articleInfo.getCustomConcept1() == null && status.getExtractedCustomConcept1() != null) {
+                articleInfo.setCustomConcept1(status.getExtractedCustomConcept1());
+            }
+            if (articleInfo.getCustomConcept2() == null && status.getExtractedCustomConcept2() != null) {
+                articleInfo.setCustomConcept2(status.getExtractedCustomConcept2());
+            }
+            if (articleInfo.getCustomConcept3() == null && status.getExtractedCustomConcept3() != null) {
+                articleInfo.setCustomConcept3(status.getExtractedCustomConcept3());
+            }
             
-            System.out.println("设置到 ArticleInfo 后:");
-            System.out.println("  customConcept1: " + articleInfo.getCustomConcept1());
-            System.out.println("  customConcept2: " + articleInfo.getCustomConcept2());
-            System.out.println("  customConcept3: " + articleInfo.getCustomConcept3());
+            System.out.println("  最终值:");
+            System.out.println("    customConcept1: " + articleInfo.getCustomConcept1());
+            System.out.println("    customConcept2: " + articleInfo.getCustomConcept2());
+            System.out.println("    customConcept3: " + articleInfo.getCustomConcept3());
             
             // Save article info
             articleService.saveArticle(articleInfo);

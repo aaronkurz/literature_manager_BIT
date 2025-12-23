@@ -266,7 +266,11 @@ export default {
           source: this.editableMetadata.source,
           keyword: this.editableMetadata.keyword,
           doi: this.editableMetadata.doi,
-          summary: this.editableMetadata.summary
+          summary: this.editableMetadata.summary,
+          // Include custom concepts from status
+          customConcept1: this.status.extractedCustomConcept1,
+          customConcept2: this.status.extractedCustomConcept2,
+          customConcept3: this.status.extractedCustomConcept3
         };
         
         const response = await axios.post(`http://localhost:9090/article/approve/${this.taskId}`, articleInfo);
