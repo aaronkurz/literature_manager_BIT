@@ -76,6 +76,9 @@ CREATE TABLE IF NOT EXISTS processing_status (
   extracted_doi VARCHAR(255),
   extracted_abstract TEXT,
   extracted_summary TEXT,
+  extracted_custom_concept1 TEXT,
+  extracted_custom_concept2 TEXT,
+  extracted_custom_concept3 TEXT,
   file_path VARCHAR(1024),
   created_time DATETIME,
   updated_time DATETIME,
@@ -94,14 +97,3 @@ CREATE TABLE IF NOT EXISTS custom_concepts (
   updated_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_display_order (display_order)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- Add custom concept fields to processing_status table
-ALTER TABLE processing_status 
-  ADD COLUMN IF NOT EXISTS extracted_custom_concept1 TEXT,
-  ADD COLUMN IF NOT EXISTS extracted_custom_concept2 TEXT,
-  ADD COLUMN IF NOT EXISTS extracted_custom_concept3 TEXT;
-
--- Example sample data (optional)
-INSERT INTO article_info (title, author, summary, pubtime)
-VALUES ('Sample Article', 'Test Author', 'This is a sample article for the local research tool.', '2025-01-01')
-ON DUPLICATE KEY UPDATE title = title;
