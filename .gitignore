@@ -17,3 +17,5 @@
 # OS / editor
 .DS_Store
 *.log
+
+.eval/evanelv/
