@@ -79,7 +79,7 @@
     text-align: center !important;
 }
 
-/*页面具体样式自定义*/
+/* Custom page styles */
 .main-content {
     width: 100%;
     max-width: 1200px;
@@ -87,7 +87,7 @@
     padding: 0 20px;
     min-height: calc(100vh - 165px);
 }
-/* ElementUI 样式覆盖 */
+/* ElementUI style overrides */
 .el-menu.el-menu--horizontal {
     border: none !important;
     height: 64px;

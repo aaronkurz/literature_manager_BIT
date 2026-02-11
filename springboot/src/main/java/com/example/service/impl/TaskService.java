@@ -9,12 +9,12 @@ import java.util.concurrent.Executors;
 @Service
 public class TaskService {
 
-    // 使用单线程池确保任务按顺序执行
+    // Single thread pool for sequential task execution
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     /**
-     * 异步执行任务
-     * @param task 要执行的任务
+     * Execute task asynchronously
+     * @param task The task to execute
      */
     @Async
     public void executeAsync(Runnable task) {
@@ -22,7 +22,7 @@ public class TaskService {
     }
 
     /**
-     * 关闭线程池（可选，在应用关闭时调用）
+     * Shutdown thread pool (optional, called on app shutdown)
      */
     public void shutdown() {
         executor.shutdown();

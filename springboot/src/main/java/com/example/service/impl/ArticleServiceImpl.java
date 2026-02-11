@@ -27,7 +27,7 @@ public class ArticleServiceImpl implements ArticleService {
 
     @Override
     public List<ArticleSummary> selectSummariesByTitle(String title) {
-        return articleMapper.selectSummariesByTitle(title); // 修改为返回列表
+        return articleMapper.selectSummariesByTitle(title); // Returns a list
     }
 
     @Override

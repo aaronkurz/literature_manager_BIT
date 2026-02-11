@@ -4,7 +4,7 @@ package com.example.service.impl;
 import cn.hutool.core.io.FileUtil;
 import com.example.entity.ArticleInfo;
 import com.example.mapper.ArticleInfoMapper;
-import com.example.utils.Config; // 假设这是定义 UPLOAD_PATH 的类
+import com.example.utils.Config; // Config class defining UPLOAD_PATH
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import org.slf4j.Logger;
@@ -32,10 +32,10 @@ public class ArticleInfoService {
     public void deleteById(Integer id) {
         ArticleInfo articleInfo = articleInfoMapper.selectById(id);
         if (articleInfo != null) {
-            // 删除本地文件
+            // Delete local files
             deleteLocalFiles(articleInfo);
 
-            // 执行原有删除逻辑
+            // Execute original delete logic
             String title = articleInfo.getTitle();
             articleInfoMapper.deleteById(id);
             articleInfoMapper.deleteSummaryByTitle(title);
@@ -43,16 +43,16 @@ public class ArticleInfoService {
     }
 
     /**
-     * 删除文章相关的本地文件
+     * Delete article-related local files
      */
     private void deleteLocalFiles(ArticleInfo articleInfo) {
-        // 获取上传目录的基础路径
-        String basePath = Config.UPLOAD_PATH; // 假设基础路径在 Config 中定义
+        // Get base upload path
+        String basePath = Config.UPLOAD_PATH; // Base path defined in Config
         if (!basePath.endsWith(File.separator)) {
             basePath += File.separator;
         }
 
-        // 删除 patha 文件（主文件）
+        // Delete patha file (main file)
         if (articleInfo.getPatha() != null && !articleInfo.getPatha().isEmpty()) {
             String fullPath = resolveFullPath(basePath, articleInfo.getPatha());
             if (FileUtil.del(fullPath)) {
@@ -62,7 +62,7 @@ public class ArticleInfoService {
             }
         }
 
-        // 删除 pathb 文件（附件，可能有多个，以分号分隔）
+        // Delete pathb files (attachments, may be semicolon-separated)
         if (articleInfo.getPathb() != null && !articleInfo.getPathb().isEmpty()) {
             String[] attachmentPaths = articleInfo.getPathb().split(";");
             for (String path : attachmentPaths) {
@@ -77,7 +77,7 @@ public class ArticleInfoService {
             }
         }
 
-        // 删除 pathdocx 文件
+        // Delete pathdocx file
         if (articleInfo.getPathdocx() != null && !articleInfo.getPathdocx().isEmpty()) {
             String fullPath = resolveFullPath(basePath, articleInfo.getPathdocx());
             if (FileUtil.del(fullPath)) {
@@ -87,7 +87,7 @@ public class ArticleInfoService {
             }
         }
 
-        // 删除 pathtxt 文件
+        // Delete pathtxt file
         if (articleInfo.getPathtxt() != null && !articleInfo.getPathtxt().isEmpty()) {
             String fullPath = resolveFullPath(basePath, articleInfo.getPathtxt());
             if (FileUtil.del(fullPath)) {
@@ -97,7 +97,7 @@ public class ArticleInfoService {
             }
         }
 
-        // 删除 pathpdf 文件
+        // Delete pathpdf file
         if (articleInfo.getPathpdf() != null && !articleInfo.getPathpdf().isEmpty()) {
             String fullPath = resolveFullPath(basePath, articleInfo.getPathpdf());
             if (FileUtil.del(fullPath)) {
@@ -109,14 +109,14 @@ public class ArticleInfoService {
     }
 
     /**
-     * 解析完整文件路径
+     * Resolve full file path
      */
     private String resolveFullPath(String basePath, String relativePath) {
-        // 如果 relativePath 已经是绝对路径，直接返回
+        // Return if already absolute
         if (FileUtil.isAbsolutePath(relativePath)) {
             return relativePath;
         }
-        // 否则，拼接基础路径和相对路径
+        // Otherwise, join base path and relative path
         return basePath + relativePath.replace("/", File.separator);
     }
 

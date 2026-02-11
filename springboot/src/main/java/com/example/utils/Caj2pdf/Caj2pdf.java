@@ -17,7 +17,7 @@ public class Caj2pdf {
 
 
     public static void runCajToPdf() throws IOException, InterruptedException {
-        // 直接使用绝对路径
+        // Use absolute path directly
         File inputDir = new File(INPUT_DIR);
         File outputDir = new File(OUTPUT_DIR);
 
@@ -29,7 +29,7 @@ public class Caj2pdf {
         );
 
         if (cajFiles == null || cajFiles.length == 0) {
-            LogUtil_caj2pdf.log("目前没有caj文件需要处理");
+            LogUtil_caj2pdf.log("No CAJ files to process");
             return;
         }
 
@@ -40,21 +40,21 @@ public class Caj2pdf {
 
     private static void validateDirectories(File inputDir, File outputDir) throws IOException {
         if (!inputDir.exists() || !inputDir.isDirectory()) {
-            LogUtil_caj2pdf.log("CAJ 文件夹未找到: " + inputDir.getAbsolutePath());
+            LogUtil_caj2pdf.log("CAJ folder not found: " + inputDir.getAbsolutePath());
         }
 
         if (!outputDir.exists() && !outputDir.mkdirs()) {
-            LogUtil_caj2pdf.log("创建输出文件夹失败: " + outputDir.getAbsolutePath());
+            LogUtil_caj2pdf.log("Failed to create output folder: " + outputDir.getAbsolutePath());
         }
     }
 
     private static void validateExecutables() throws IOException {
         if (!new File(CONVERTER_EXE).exists()) {
-            LogUtil_caj2pdf.log("caj2pdf.exe工具缺失: " + CONVERTER_EXE);
+            LogUtil_caj2pdf.log("caj2pdf.exe tool missing: " + CONVERTER_EXE);
         }
 
         if (!new File(MUTOOL_EXE).exists()) {
-            LogUtil_caj2pdf.log("mutool.exe工具缺失: " + MUTOOL_EXE);
+            LogUtil_caj2pdf.log("mutool.exe tool missing: " + MUTOOL_EXE);
         }
     }
 
@@ -63,11 +63,11 @@ public class Caj2pdf {
         File pdfFile = new File(outputDir, pdfFileName);
 
         if (pdfFile.exists()) {
-            LogUtil_caj2pdf.log("已经被转换直接跳过: " + cajFile.getName());
+            LogUtil_caj2pdf.log("Already converted, skipping: " + cajFile.getName());
             return;
         }
 
-        LogUtil_caj2pdf.log("正在处理: " + cajFile.getName());
+        LogUtil_caj2pdf.log("Processing: " + cajFile.getName());
 
         String[] command = {
                 CONVERTER_EXE,
@@ -94,9 +94,9 @@ public class Caj2pdf {
         }
 
         if (exitCode == 0) {
-            LogUtil_caj2pdf.log("转换成功: " + pdfFileName);
+            LogUtil_caj2pdf.log("Conversion successful: " + pdfFileName);
         } else {
-            LogUtil_caj2pdf.log("转换失败: " + cajFile.getName() + " (Exit code: " + exitCode + ")");
+            LogUtil_caj2pdf.log("Conversion failed: " + cajFile.getName() + " (Exit code: " + exitCode + ")");
         }
     }
 }

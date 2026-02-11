@@ -15,14 +15,14 @@ public class LogUtil_caj2pdf {
     public static synchronized void log(String message) {
         File logDir = new File(LOG_DIR);
         if (!logDir.exists()) {
-            logDir.mkdirs(); // 创建日志目录
+            logDir.mkdirs(); // Create log directory
         }
 
         try (PrintWriter writer = new PrintWriter(new FileWriter(new File(logDir, LOG_FILE), true))) {
             String timestamp = DATE_FORMAT.format(new Date());
             writer.println("[" + timestamp + "] " + message);
         } catch (IOException e) {
-            System.err.println("无法写入日志: " + e.getMessage());
+            System.err.println("Failed to write log: " + e.getMessage());
         }
     }
 }
