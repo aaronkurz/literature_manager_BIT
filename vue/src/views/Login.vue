@@ -2,14 +2,14 @@
   <div class="container">
     <div class="login-box">
       <div class="title-wrapper">
-        <div class="main-title">融合大模型技术的学术文献管理与分析系统</div>
-        <div class="sub-title">请登录您的账号</div>
+        <div class="main-title">Academic Literature Management & Analysis System</div>
+        <div class="sub-title">Please log in to your account</div>
       </div>
       <el-form :model="form" :rules="rules" ref="formRef">
         <el-form-item prop="username">
           <el-input
               prefix-icon="el-icon-user"
-              placeholder="请输入账号"
+              placeholder="Enter username"
               v-model="form.username"
               class="custom-input"
               @focus="handleInputFocus"
@@ -19,7 +19,7 @@
         <el-form-item prop="password">
           <el-input
               prefix-icon="el-icon-lock"
-              placeholder="请输入密码"
+              placeholder="Enter password"
               show-password
               v-model="form.password"
               class="custom-input"
@@ -30,11 +30,11 @@
         <el-form-item prop="role">
           <el-select
               v-model="form.role"
-              placeholder="请选择角色"
+              placeholder="Select role"
               style="width: 100%"
               class="custom-select">
-            <el-option label="管理员" value="ADMIN"></el-option>
-            <el-option label="普通用户" value="USER"></el-option>
+            <el-option label="Admin" value="ADMIN"></el-option>
+            <el-option label="User" value="USER"></el-option>
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -43,12 +43,12 @@
               @mouseenter="handleBtnHover"
               @mouseleave="handleBtnLeave"
               @click="login">
-            登 录
+            Log In
           </el-button>
         </el-form-item>
         <div class="footer">
-          <span>还没有账号？</span>
-          <a href="/register" class="register-link">立即注册</a>
+          <span>Don't have an account?</span>
+          <a href="/register" class="register-link">Register now</a>
         </div>
       </el-form>
     </div>
@@ -63,10 +63,10 @@ export default {
       form: { role: 'USER' },
       rules: {
         username: [
-          { required: true, message: '请输入账号', trigger: 'blur' },
+          { required: true, message: 'Please enter username', trigger: 'blur' },
         ],
         password: [
-          { required: true, message: '请输入密码', trigger: 'blur' },
+          { required: true, message: 'Please enter password', trigger: 'blur' },
         ]
       }
     }
@@ -83,7 +83,7 @@ export default {
               } else {
                 this.$router.push('/front/graph')
               }
-              this.$message.success('登录成功')
+              this.$message.success('Login successful')
             } else {
               this.$message.error(res.msg)
             }
