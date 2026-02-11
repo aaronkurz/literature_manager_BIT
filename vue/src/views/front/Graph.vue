@@ -12,20 +12,20 @@
         <div id="controls">
           <!-- Custom Query Section -->
           <el-card class="control-card legend-box" shadow="hover">
-            <h3 slot="header">自定义查询</h3>
+            <h3 slot="header">Custom Query</h3>
             <el-input
                 type="textarea"
                 :rows="3"
                 v-model="cypherQuery"
-                placeholder="输入Cypher查询语句，例如：MATCH (p:论文)-[:作者]->(a) RETURN p,a LIMIT 100"
+                placeholder="Enter Cypher query, e.g.: MATCH (p:Paper)-[:AUTHORED_BY]->(a) RETURN p,a LIMIT 100"
             ></el-input>
             <div class="button-group">
-              <el-button type="primary" @click="handleReload">执行查询</el-button>
-              <el-button type="success" @click="viz?.stabilize()">稳定布局</el-button>
-              <el-button type="warning" @click="handleRebuildGraph" :loading="rebuilding">重建图谱</el-button>
+              <el-button type="primary" @click="handleReload">Run Query</el-button>
+              <el-button type="success" @click="viz?.stabilize()">Stabilize Layout</el-button>
+              <el-button type="warning" @click="handleRebuildGraph" :loading="rebuilding">Rebuild Graph</el-button>
             </div>
             <div class="legend-section">
-              <h4>节点类型：</h4>
+              <h4>Node Types:</h4>
               <el-row :gutter="10" class="legend-grid">
                 <el-col :span="12" v-for="item in nodeTypes" :key="item.label">
                   <div class="legend-item">
@@ -39,7 +39,7 @@
 
           <!-- Relationship Query Section -->
           <el-card class="control-card" shadow="hover">
-            <h3 slot="header">关系查询</h3>
+            <h3 slot="header">Relationship Query</h3>
             <el-row :gutter="15" class="button-grid">
               <el-col :span="8" v-for="query in relationQueries" :key="query.label">
                 <el-button
@@ -53,7 +53,7 @@
 
           <!-- Node Query Section -->
           <el-card class="control-card" shadow="hover">
-            <h3 slot="header">节点查询</h3>
+            <h3 slot="header">Node Query</h3>
             <el-row :gutter="15" class="button-grid">
               <el-col :span="8" v-for="query in nodeQueries" :key="query.label">
                 <el-button
@@ -67,7 +67,7 @@
 
           <!-- Custom Concepts Query Section -->
           <el-card v-if="customConceptQueries.length > 0" class="control-card" shadow="hover">
-            <h3 slot="header">自定义概念查询</h3>
+            <h3 slot="header">Custom Concept Query</h3>
             <el-row :gutter="15" class="button-grid">
               <el-col :span="8" v-for="query in customConceptQueries" :key="query.label">
                 <el-button
@@ -106,7 +106,7 @@ export default {
     return {
       viz: null,
       cypherQuery: '',
-      rebuilding: false, // 控制重建按钮的加载状态
+      rebuilding: false, // Rebuild button loading state
       config: {
         containerId: "viz",
         neo4j: {
@@ -115,62 +115,62 @@ export default {
           serverPassword: "12345678"
         },
         labels: {
-          "论文": { label: "title", color: "#FF6B6B", size: 40, font: { size: 18 } },
-          "作者": { label: "name", color: "#ff00a6", size: 30 },
-          "文献来源": { label: "name", color: "#45B7D1", size: 25 },
-          "单位": { label: "name", color: "#96CEB4", size: 20 },
-          "关键词": { label: "name", color: "#FFEEAD", size: 15 },
-          "基金": { label: "name", color: "#FFA07A", size: 20 },
-          "分类号": { label: "code", color: "#9B59B6", size: 15 },
-          "来源库": { label: "name", color: "#D8BFD8", size: 20 },
-          "自定义概念": { label: "name", color: "#67C23A", size: 25 }
+          "Paper": { label: "title", color: "#FF6B6B", size: 40, font: { size: 18 } },
+          "Author": { label: "name", color: "#ff00a6", size: 30 },
+          "Source": { label: "name", color: "#45B7D1", size: 25 },
+          "Institution": { label: "name", color: "#96CEB4", size: 20 },
+          "Keyword": { label: "name", color: "#FFEEAD", size: 15 },
+          "Fund": { label: "name", color: "#FFA07A", size: 20 },
+          "Category": { label: "code", color: "#9B59B6", size: 15 },
+          "SourceDB": { label: "name", color: "#D8BFD8", size: 20 },
+          "CustomConcept": { label: "name", color: "#67C23A", size: 25 }
         },
         relationships: {
-          "作者": { color: "#FF4500", thickness: "weight", caption: true },
-          "所属": { color: "#20B2AA", thickness: 2, caption: true },
-          "隶属于": { color: "#2ECC71", curvature: 0.5, caption: true },
-          "关键词": { color: "#FFD700", caption: true },
-          "资助": { color: "#32CD32", curvature: 0.3, caption: true },
-          "分类": { color: "#8A2BE2", thickness: 1.5, caption: true },
-          "来源库": { color: "#DDA0DD", dash: [5, 5], caption: true },
-          "自定义概念关系": { color: "#67C23A", thickness: 2.5, caption: true }
+          "AUTHORED_BY": { color: "#FF4500", thickness: "weight", caption: true },
+          "BELONGS_TO": { color: "#20B2AA", thickness: 2, caption: true },
+          "AFFILIATED_WITH": { color: "#2ECC71", curvature: 0.5, caption: true },
+          "HAS_KEYWORD": { color: "#FFD700", caption: true },
+          "FUNDED_BY": { color: "#32CD32", curvature: 0.3, caption: true },
+          "CLASSIFIED_AS": { color: "#8A2BE2", thickness: 1.5, caption: true },
+          "FROM_SOURCE": { color: "#DDA0DD", dash: [5, 5], caption: true },
+          "HAS_CUSTOM_CONCEPT": { color: "#67C23A", thickness: 2.5, caption: true }
         },
         initialCypher: "MATCH p=()-->() RETURN p LIMIT 50"
       },
       nodeTypes: [
-        { label: "论文", class: "paper" },
-        { label: "作者", class: "author" },
-        { label: "文献来源", class: "university" },
-        { label: "单位", class: "institution" },
-        { label: "关键词", class: "keyword" },
-        { label: "基金", class: "fund" },
-        { label: "分类号", class: "category" },
-        { label: "来源库", class: "source" },
-        { label: "自定义概念", class: "custom-concept" }
+        { label: "Paper", class: "paper" },
+        { label: "Author", class: "author" },
+        { label: "Source", class: "university" },
+        { label: "Institution", class: "institution" },
+        { label: "Keyword", class: "keyword" },
+        { label: "Fund", class: "fund" },
+        { label: "Category", class: "category" },
+        { label: "SourceDB", class: "source" },
+        { label: "CustomConcept", class: "custom-concept" }
       ],
       relationQueries: [
-        { label: "全部关系", cypher: "MATCH p=()-->() RETURN p LIMIT 50" },
-        { label: "论文-作者", cypher: "MATCH p=()-[r:`作者`]->() RETURN p LIMIT 50" },
-        { label: "论文-关键词", cypher: "MATCH p=()-[r:`关键词`]->() RETURN p LIMIT 50" },
-        { label: "论文-分类", cypher: "MATCH p=()-[r:`分类`]->() RETURN p LIMIT 50" },
-        { label: "论文-概念", cypher: "MATCH p=(论文:`论文`)-[r:`自定义概念关系`]->(c:`自定义概念`) RETURN p, r, c LIMIT 50" },
-        { label: "作者-文献来源", cypher: "MATCH p=()-[r:`所属`]->() RETURN p LIMIT 50" },
-        { label: "论文-来源库", cypher: "MATCH p=()-[r:`来源库`]->() RETURN p LIMIT 50" },
-        { label: "基金-论文", cypher: "MATCH p=()-[r:`资助`]->() RETURN p LIMIT 50" },
-        { label: "文献来源-单位", cypher: "MATCH p=()-[r:`隶属于`]->() RETURN p LIMIT 50" },
-        { label: "查找某个论文", cypher: "MATCH (n:`论文` {title: '基于电子病历知识图谱的隐含疾病信息挖掘与应用研究'})-[r]-(m) RETURN n, r, m" }
+        { label: "All Relations", cypher: "MATCH p=()-->() RETURN p LIMIT 50" },
+        { label: "Paper-Author", cypher: "MATCH p=()-[r:`AUTHORED_BY`]->() RETURN p LIMIT 50" },
+        { label: "Paper-Keyword", cypher: "MATCH p=()-[r:`HAS_KEYWORD`]->() RETURN p LIMIT 50" },
+        { label: "Paper-Category", cypher: "MATCH p=()-[r:`CLASSIFIED_AS`]->() RETURN p LIMIT 50" },
+        { label: "Paper-Concept", cypher: "MATCH p=(paper:`Paper`)-[r:`HAS_CUSTOM_CONCEPT`]->(c:`CustomConcept`) RETURN p, r, c LIMIT 50" },
+        { label: "Author-Source", cypher: "MATCH p=()-[r:`BELONGS_TO`]->() RETURN p LIMIT 50" },
+        { label: "Paper-SourceDB", cypher: "MATCH p=()-[r:`FROM_SOURCE`]->() RETURN p LIMIT 50" },
+        { label: "Fund-Paper", cypher: "MATCH p=()-[r:`FUNDED_BY`]->() RETURN p LIMIT 50" },
+        { label: "Source-Institution", cypher: "MATCH p=()-[r:`AFFILIATED_WITH`]->() RETURN p LIMIT 50" },
+        { label: "Find Specific Paper", cypher: "MATCH (n:`Paper` {title: 'Example Paper Title'})-[r]-(m) RETURN n, r, m" }
       ],
       nodeQueries: [
-        { label: "全部节点", cypher: "MATCH (n) RETURN n LIMIT 25" },
-        { label: "作者", cypher: "MATCH (n:`作者`) RETURN n LIMIT 25" },
-        { label: "关键词", cypher: "MATCH (n:`关键词`) RETURN n LIMIT 25" },
-        { label: "分类号", cypher: "MATCH (n:`分类号`) RETURN n LIMIT 25" },
-        { label: "基金", cypher: "MATCH (n:`基金`) RETURN n LIMIT 25" },
-        { label: "文献来源", cypher: "MATCH (n:`文献来源`) RETURN n LIMIT 25" },
-        { label: "单位", cypher: "MATCH (n:`单位`) RETURN n LIMIT 25" },
-        { label: "来源库", cypher: "MATCH (n:`来源库`) RETURN n LIMIT 25" },
-        { label: "论文", cypher: "MATCH (n:`论文`) RETURN n LIMIT 25" },
-        { label: "自定义概念", cypher: "MATCH (n:`自定义概念`) RETURN n LIMIT 25" }
+        { label: "All Nodes", cypher: "MATCH (n) RETURN n LIMIT 25" },
+        { label: "Author", cypher: "MATCH (n:`Author`) RETURN n LIMIT 25" },
+        { label: "Keyword", cypher: "MATCH (n:`Keyword`) RETURN n LIMIT 25" },
+        { label: "Category", cypher: "MATCH (n:`Category`) RETURN n LIMIT 25" },
+        { label: "Fund", cypher: "MATCH (n:`Fund`) RETURN n LIMIT 25" },
+        { label: "Source", cypher: "MATCH (n:`Source`) RETURN n LIMIT 25" },
+        { label: "Institution", cypher: "MATCH (n:`Institution`) RETURN n LIMIT 25" },
+        { label: "SourceDB", cypher: "MATCH (n:`SourceDB`) RETURN n LIMIT 25" },
+        { label: "Paper", cypher: "MATCH (n:`Paper`) RETURN n LIMIT 25" },
+        { label: "CustomConcept", cypher: "MATCH (n:`CustomConcept`) RETURN n LIMIT 25" }
       ],
       customConceptQueries: []
     };
@@ -195,8 +195,8 @@ export default {
           concepts.forEach(concept => {
             // Query for all papers with this relationship type
             this.customConceptQueries.push({
-              label: `全部${concept.relationshipName}`,
-              cypher: `MATCH p=(论文:\`论文\`)-[:\`自定义概念关系\`]->(c:\`自定义概念\`) WHERE c.relationship = '${concept.relationshipName}' RETURN p LIMIT 50`
+              label: `All ${concept.relationshipName}`,
+              cypher: `MATCH p=(paper:\`Paper\`)-[:\`HAS_CUSTOM_CONCEPT\`]->(c:\`CustomConcept\`) WHERE c.relationship = '${concept.relationshipName}' RETURN p LIMIT 50`
             });
             
             // Query for each specific concept value
@@ -204,13 +204,13 @@ export default {
             conceptsList.forEach(conceptValue => {
               this.customConceptQueries.push({
                 label: `${conceptValue}`,
-                cypher: `MATCH p=(论文:\`论文\`)-[:\`自定义概念关系\`]->(c:\`自定义概念\` {name: '${conceptValue}', relationship: '${concept.relationshipName}'}) RETURN p LIMIT 50`
+                cypher: `MATCH p=(paper:\`Paper\`)-[:\`HAS_CUSTOM_CONCEPT\`]->(c:\`CustomConcept\` {name: '${conceptValue}', relationship: '${concept.relationshipName}'}) RETURN p LIMIT 50`
               });
             });
           });
         }
       } catch (error) {
-        console.error('加载自定义概念失败:', error);
+        console.error('Failed to load custom concepts:', error);
       }
     },
     runQuery(cypher) {
@@ -225,39 +225,39 @@ export default {
       }
     },
     handleRebuildGraph() {
-      this.$confirm('确定要重建图谱吗？此操作可能需要一些时间。', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
+      this.$confirm('Are you sure you want to rebuild the graph? This may take some time.', 'Warning', {
+        confirmButtonText: 'OK',
+        cancelButtonText: 'Cancel',
         type: 'warning'
       }).then(() => {
-        this.rebuilding = true; // 显示按钮上的加载动画
+        this.rebuilding = true; // Show loading animation on button
         const loadingMessage = this.$message({
-          message: '正在重建图谱，请稍候...',
+          message: 'Rebuilding graph, please wait...',
           type: 'info',
-          showClose: false, // 不显示关闭按钮
-          duration: 0, // 持续显示，直到手动关闭
+          showClose: false, // Hide close button
+          duration: 0, // Show persistently until manually closed
           iconClass: 'el-icon-loading'
         });
 
         axios.post('http://localhost:9090/article/rebuild')
             .then(response => {
               this.rebuilding = false;
-              loadingMessage.close(); // 关闭加载提示
+              loadingMessage.close(); // Close loading message
               if (response.data.code === '200') {
-                this.$message.success('图谱重建成功！');
+                this.$message.success('Graph rebuilt successfully!');
                 this.viz?.reload();
               } else {
-                this.$message.error('图谱重建失败：' + response.data.msg);
+                this.$message.error('Graph rebuild failed: ' + response.data.msg);
               }
             })
             .catch(error => {
               this.rebuilding = false;
-              loadingMessage.close(); // 关闭加载提示
-              console.error('重建图谱失败：', error);
-              this.$message.error('重建图谱时发生错误，请稍后重试。');
+              loadingMessage.close(); // Close loading message
+              console.error('Graph rebuild failed: ', error);
+              this.$message.error('An error occurred while rebuilding the graph. Please try again later.');
             });
       }).catch(() => {
-        this.$message.info('已取消重建');
+        this.$message.info('Rebuild cancelled');
       });
     },
     openNeo4jBrowser() {
