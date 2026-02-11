@@ -49,12 +49,12 @@ public class AfterUpload {
         ProcessingStatus status = processingStatusService.getStatus(taskId);
         
         try {
-            System.out.println("=== 开始处理论文: " + paperFilePath + " ===");
+            System.out.println("=== Starting paper processing: " + paperFilePath + " ===");
             
             // Update status: Converting
             status.setStatus("CONVERTING");
             status.setProgress(20);
-            status.setCurrentStep("正在转换文件格式...");
+            status.setCurrentStep("Converting file format...");
             processingStatusService.updateStatus(status);
             
             // Get file paths
@@ -71,27 +71,27 @@ public class AfterUpload {
             runPdfToDocx();
             runpdf2txt();
             
-            System.out.println("文件格式转换完成");
+            System.out.println("File format conversion complete");
             
             // Read text content
             String content = "";
             if (new File(txtpath).exists()) {
                 content = new String(Files.readAllBytes(Paths.get(txtpath)));
-                System.out.println("提取文本内容，长度: " + content.length() + " 字符");
+                System.out.println("Text content extracted, length: " + content.length() + " chars");
             }
             if (content.isEmpty()) {
-                throw new Exception("无法提取文本内容");
+                throw new Exception("Failed to extract text content");
             }
             
             // Update status: Extracting metadata
             status.setStatus("EXTRACTING");
             status.setProgress(40);
-            status.setCurrentStep("正在提取论文元数据...");
+            status.setCurrentStep("Extracting paper metadata...");
             processingStatusService.updateStatus(status);
             
             // Extract metadata using Ollama (first 8000 chars usually contain all metadata)
             String metadataText = content.length() > 8000 ? content.substring(0, 8000) : content;
-            System.out.println("调用Ollama提取元数据 (输入长度: " + metadataText.length() + " 字符)");
+            System.out.println("Calling Ollama for metadata extraction (input length: " + metadataText.length() + " chars)");
             JsonObject metadata = extractMetadata(metadataText);
             
             // Store extracted metadata in status (with truncation for long fields)
@@ -104,10 +104,10 @@ public class AfterUpload {
             status.setExtractedDoi(getStringValue(metadata, "doi"));
             status.setExtractedAbstract(getStringValue(metadata, "summary"));
             
-            System.out.println("元数据提取完成:");
-            System.out.println("  标题: " + status.getExtractedTitle());
-            System.out.println("  作者: " + status.getExtractedAuthors());
-            System.out.println("  摘要: " + status.getExtractedAbstract());
+            System.out.println("Metadata extraction complete:");
+            System.out.println("  Title: " + status.getExtractedTitle());
+            System.out.println("  Author: " + status.getExtractedAuthors());
+            System.out.println("  Abstract: " + status.getExtractedAbstract());
             
             // Use the extracted abstract as the summary (no need for second AI call)
             status.setExtractedSummary(status.getExtractedAbstract());
@@ -115,7 +115,7 @@ public class AfterUpload {
             // Update status to show we're extracting custom concepts (if any are defined)
             status.setStatus("EXTRACTING");
             status.setProgress(60);
-            status.setCurrentStep("正在识别自定义概念...");
+            status.setCurrentStep("Identifying custom concepts...");
             processingStatusService.updateStatus(status);
             
             // Extract custom concepts if any are defined
@@ -124,18 +124,18 @@ public class AfterUpload {
             // Update status: Pending approval
             status.setStatus("PENDING_APPROVAL");
             status.setProgress(100);
-            status.setCurrentStep("提取完成，等待用户审核...");
+            status.setCurrentStep("Extraction complete, waiting for user review...");
             processingStatusService.updateStatus(status);
             
-            System.out.println("=== 元数据提取完成，等待用户审核 ===");
+            System.out.println("=== Metadata extraction complete, waiting for user review ===");
             
         } catch (Exception e) {
             status.setStatus("FAILED");
             status.setProgress(0);
-            status.setCurrentStep("处理失败");
+            status.setCurrentStep("Processing failed");
             status.setErrorMessage(e.getMessage());
             processingStatusService.updateStatus(status);
-            System.err.println("处理失败: " + e.getMessage());
+            System.err.println("Processing failed: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -144,28 +144,28 @@ public class AfterUpload {
      * Extract metadata from paper content using Ollama
      */
     private JsonObject extractMetadata(String content) throws Exception {
-        System.out.println("=== 开始提取元数据 ===");
-        String prompt = "你是一个学术论文元数据提取专家。请从下面的论文文本中提取元数据，并严格按照以下JSON格式返回，不要添加任何Markdown标记或额外说明：\n\n" +
+        System.out.println("=== Starting metadata extraction ===");
+        String prompt = "You are an academic paper metadata extraction expert. Extract metadata from the following paper text and return it strictly in the following JSON format, without any Markdown formatting or extra explanation:\n\n" +
             "{\n" +
-            "  \"title\": \"论文标题\",\n" +
-            "  \"author\": \"作者1; 作者2; 作者3\",\n" +
-            "  \"organ\": \"作者单位\",\n" +
-            "  \"year\": \"发表年份(仅数字)\",\n" +
-            "  \"source\": \"期刊或会议名称\",\n" +
-            "  \"keyword\": \"关键词1; 关键词2; 关键词3\",\n" +
-            "  \"doi\": \"DOI编号\",\n" +
-            "  \"summary\": \"论文摘要内容\"\n" +
+            "  \"title\": \"Paper title\",\n" +
+            "  \"author\": \"Author1; Author2; Author3\",\n" +
+            "  \"organ\": \"Author institution\",\n" +
+            "  \"year\": \"Publication year (numbers only)\",\n" +
+            "  \"source\": \"Journal or conference name\",\n" +
+            "  \"keyword\": \"Keyword1; Keyword2; Keyword3\",\n" +
+            "  \"doi\": \"DOI number\",\n" +
+            "  \"summary\": \"Paper abstract content\"\n" +
             "}\n\n" +
-            "如果某个字段无法提取，请使用空字符串\"\"。现在开始提取以下论文的元数据：\n\n" +
+            "If a field cannot be extracted, use an empty string \"\". Now extract metadata from the following paper:\n\n" +
             content;
         
-        System.out.println("调用 BigModelUtil.ollamaTextGeneration...");
+        System.out.println("Calling BigModelUtil.ollamaTextGeneration...");
         String response = BigModelUtil.ollamaTextGeneration(prompt);
-        System.out.println("BigModelUtil 返回，响应长度: " + (response != null ? response.length() : "null"));
+        System.out.println("BigModelUtil returned, response length: " + (response != null ? response.length() : "null"));
         
         JsonObject result = parseJsonSafely(response);
-        System.out.println("JSON 解析完成，字段数: " + result.size());
-        System.out.println("=== 元数据提取完成 ===");
+        System.out.println("JSON parsing complete, field count: " + result.size());
+        System.out.println("=== Metadata extraction complete ===");
         
         return result;
     }
@@ -181,11 +181,11 @@ public class AfterUpload {
             List<CustomConcept> customConcepts = customConceptService.getAllConcepts();
             
             if (customConcepts.isEmpty()) {
-                System.out.println("没有自定义概念配置，跳过自定义概念提取");
+                System.out.println("No custom concepts configured, skipping extraction");
                 return;
             }
             
-            System.out.println("开始提取自定义概念，共 " + customConcepts.size() + " 个关系");
+            System.out.println("Starting custom concept extraction, " + customConcepts.size() + " relationships");
             
             // Use a shorter content for faster processing (first 4000 chars should be enough)
             String shortContent = content.length() > 4000 ? content.substring(0, 4000) : content;
@@ -196,7 +196,7 @@ public class AfterUpload {
                 String relationshipName = concept.getRelationshipName();
                 List<String> concepts = concept.getConceptsList();
                 
-                System.out.println("提取自定义概念 " + (i + 1) + ": " + relationshipName + " - " + concepts);
+                System.out.println("Extracting custom concept " + (i + 1) + ": " + relationshipName + " - " + concepts);
                 
                 try {
                     // Build optimized prompt for this relationship
@@ -231,15 +231,15 @@ public class AfterUpload {
                             break;
                     }
                     
-                    System.out.println("自定义概念 " + (i + 1) + " 提取结果: " + resultJson);
+                    System.out.println("Custom concept " + (i + 1) + " result: " + resultJson);
                 } catch (Exception conceptError) {
-                    System.err.println("提取自定义概念 " + (i + 1) + " 失败: " + conceptError.getMessage());
+                    System.err.println("Custom concept " + (i + 1) + " extraction failed: " + conceptError.getMessage());
                     // Continue with next concept even if this one fails
                 }
             }
             
         } catch (Exception e) {
-            System.err.println("提取自定义概念失败: " + e.getMessage());
+            System.err.println("Custom concept extraction failed: " + e.getMessage());
             e.printStackTrace();
             // Don't fail the whole process if custom concept extraction fails
         }
@@ -250,13 +250,13 @@ public class AfterUpload {
      */
     private String buildCustomConceptPrompt(String relationshipName, List<String> concepts, String content) {
         StringBuilder prompt = new StringBuilder();
-        prompt.append("从以下论文摘要中，判断该论文是否使用了这些概念。\n\n");
-        prompt.append("关系类型: ").append(relationshipName).append("\n");
-        prompt.append("可能的概念: ").append(String.join(", ", concepts)).append("\n\n");
-        prompt.append("只返回JSON格式（不要markdown标记）：{\"concepts\": [\"匹配的概念1\", \"匹配的概念2\"]}\n");
-        prompt.append("如果没有匹配，返回：{\"concepts\": []}\n");
-        prompt.append("只返回列表中存在的概念名称。\n\n");
-        prompt.append("论文内容：\n").append(content);
+        prompt.append("From the following paper abstract, determine if the paper uses any of these concepts.\n\n");
+        prompt.append("Relationship type: ").append(relationshipName).append("\n");
+        prompt.append("Possible concepts: ").append(String.join(", ", concepts)).append("\n\n");
+        prompt.append("Return only JSON format (no markdown): {\"concepts\": [\"matching_concept1\", \"matching_concept2\"]}\n");
+        prompt.append("If no match, return: {\"concepts\": []}\n");
+        prompt.append("Only return concept names from the given list.\n\n");
+        prompt.append("Paper content:\n").append(content);
         
         return prompt.toString();
     }
@@ -283,8 +283,8 @@ public class AfterUpload {
             // Try to parse as JSON
             return JsonParser.parseString(cleaned).getAsJsonObject();
         } catch (Exception e) {
-            System.err.println("JSON解析失败，响应内容: " + response);
-            System.err.println("错误: " + e.getMessage());
+            System.err.println("JSON parsing failed, response: " + response);
+            System.err.println("Error: " + e.getMessage());
             // Return empty JSON object as fallback
             return new JsonObject();
         }
@@ -297,12 +297,12 @@ public class AfterUpload {
         try {
             if (json != null && json.has(key) && !json.get(key).isJsonNull()) {
                 String value = json.get(key).getAsString().trim();
-                return value.isEmpty() ? "未提取" : value;
+                return value.isEmpty() ? "Not extracted" : value;
             }
         } catch (Exception e) {
-            System.err.println("获取字段 " + key + " 失败: " + e.getMessage());
+            System.err.println("Failed to get field " + key + ": " + e.getMessage());
         }
-        return "未提取";
+        return "Not extracted";
     }
     
     /**
@@ -311,7 +311,7 @@ public class AfterUpload {
     private String getStringValueWithLimit(JsonObject json, String key, int maxLength) {
         String value = getStringValue(json, key);
         if (value != null && value.length() > maxLength) {
-            System.out.println("警告: 字段 '" + key + "' 超过最大长度 " + maxLength + "，已截断 (原长度: " + value.length() + ")");
+            System.out.println("Warning: field '" + key + "' exceeds max length " + maxLength + ", truncated (original length: " + value.length() + ")");
             return value.substring(0, maxLength);
         }
         return value;
@@ -322,7 +322,7 @@ public class AfterUpload {
      */
     public void saveApprovedArticle(ArticleInfo articleInfo, ProcessingStatus status) {
         try {
-            System.out.println("=== 保存已批准的论文: " + articleInfo.getTitle() + " ===");
+            System.out.println("=== Saving approved paper: " + articleInfo.getTitle() + " ===");
             
             // Get file paths
             String oripath = status.getFilePath().split("\\.")[0];
@@ -331,12 +331,12 @@ public class AfterUpload {
             articleInfo.setPathtxt(oripath + ".txt");
             
             // Copy custom concepts from status to article info (only if not already set from frontend)
-            System.out.println("处理自定义概念:");
-            System.out.println("  从前端接收:");
+            System.out.println("Processing custom concepts:");
+            System.out.println("  From frontend:");
             System.out.println("    customConcept1: " + articleInfo.getCustomConcept1());
             System.out.println("    customConcept2: " + articleInfo.getCustomConcept2());
             System.out.println("    customConcept3: " + articleInfo.getCustomConcept3());
-            System.out.println("  从 ProcessingStatus 提取:");
+            System.out.println("  From ProcessingStatus:");
             System.out.println("    extractedCustomConcept1: " + status.getExtractedCustomConcept1());
             System.out.println("    extractedCustomConcept2: " + status.getExtractedCustomConcept2());
             System.out.println("    extractedCustomConcept3: " + status.getExtractedCustomConcept3());
@@ -352,14 +352,14 @@ public class AfterUpload {
                 articleInfo.setCustomConcept3(status.getExtractedCustomConcept3());
             }
             
-            System.out.println("  最终值:");
+            System.out.println("  Final values:");
             System.out.println("    customConcept1: " + articleInfo.getCustomConcept1());
             System.out.println("    customConcept2: " + articleInfo.getCustomConcept2());
             System.out.println("    customConcept3: " + articleInfo.getCustomConcept3());
             
             // Save article info
             articleService.saveArticle(articleInfo);
-            System.out.println("成功将论文信息存入mysql");
+            System.out.println("Paper info saved to MySQL");
             
             // Create summary JSON
             JsonObject summaryJson = new JsonObject();
@@ -384,15 +384,15 @@ public class AfterUpload {
             summaryJson.addProperty("keyword", articleInfo.getKeyword() != null ? articleInfo.getKeyword() : "");
             
             saveSummary(Config.OLLAMA_MODEL, articleInfo.getTitle(), gson.toJson(summaryJson), "0");
-            System.out.println("成功将摘要存入数据库");
+            System.out.println("Summary saved to database");
             
             // Update Neo4j graph
             runNeo4jLoader(false, articleInfo.getTitle());
-            System.out.println("图谱更新完毕");
-            System.out.println("=== 论文保存完成 ===");
+            System.out.println("Graph updated");
+            System.out.println("=== Paper save complete ===");
             
         } catch (Exception e) {
-            System.err.println("保存失败: " + e.getMessage());
+            System.err.println("Save failed: " + e.getMessage());
             e.printStackTrace();
             throw new RuntimeException(e);
         }
