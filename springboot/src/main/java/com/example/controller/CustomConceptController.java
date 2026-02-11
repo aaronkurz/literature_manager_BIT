@@ -27,7 +27,7 @@ public class CustomConceptController {
             List<CustomConcept> concepts = customConceptService.getAllConcepts();
             return Result.success(concepts);
         } catch (Exception e) {
-            return Result.error("500", "获取失败：" + e.getMessage());
+            return Result.error("500", "Failed to retrieve: " + e.getMessage());
         }
     }
     
@@ -40,7 +40,7 @@ public class CustomConceptController {
             CustomConcept concept = customConceptService.getByDisplayOrder(displayOrder);
             return Result.success(concept);
         } catch (Exception e) {
-            return Result.error("500", "获取失败：" + e.getMessage());
+            return Result.error("500", "Failed to retrieve: " + e.getMessage());
         }
     }
     
@@ -51,11 +51,11 @@ public class CustomConceptController {
     public Result<String> saveOrUpdate(@RequestBody CustomConcept customConcept) {
         try {
             customConceptService.saveOrUpdate(customConcept);
-            return Result.success("保存成功");
+            return Result.success("Saved successfully");
         } catch (IllegalArgumentException e) {
             return Result.error("400", e.getMessage());
         } catch (Exception e) {
-            return Result.error("500", "保存失败：" + e.getMessage());
+            return Result.error("500", "Save failed: " + e.getMessage());
         }
     }
     
@@ -66,9 +66,9 @@ public class CustomConceptController {
     public Result<String> deleteByDisplayOrder(@PathVariable Integer displayOrder) {
         try {
             customConceptService.deleteByDisplayOrder(displayOrder);
-            return Result.success("删除成功");
+            return Result.success("Deleted successfully");
         } catch (Exception e) {
-            return Result.error("500", "删除失败：" + e.getMessage());
+            return Result.error("500", "Delete failed: " + e.getMessage());
         }
     }
 }

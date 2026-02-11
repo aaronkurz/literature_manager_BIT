@@ -22,14 +22,14 @@ public class ArticleInfoController {
         return Result.success();
     }
 
-    //删除
+    // Delete
     @DeleteMapping("/delete/{id}")
     public Result deleteById(@PathVariable Integer id) {
         articleInfoService.deleteById(id);
         return Result.success();
     }
 
-    //批量删除
+    // Batch delete
     @DeleteMapping("/delete/batch")
     public Result deleteBatch(@RequestBody List<Integer> ids) {
         articleInfoService.deleteBatch(ids);

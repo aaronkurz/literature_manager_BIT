@@ -14,13 +14,13 @@ import java.net.URLEncoder;
 import java.util.List;
 
 /**
- * 文件接口
+ * File Controller
  */
 @RestController
 @RequestMapping("/files")
 public class FileController {
 
-    // 文件上传存储路径
+    // File upload storage path
     private static final String filePath = System.getProperty("user.dir") + "/files/";
 
     @Value("${server.port:9090}")
@@ -30,7 +30,7 @@ public class FileController {
     private String ip;
 
     /**
-     * 文件上传
+     * File upload
      */
     @PostMapping("/upload")
     public Result upload(MultipartFile file) {
@@ -44,12 +44,12 @@ public class FileController {
             if (!FileUtil.isDirectory(filePath)) {
                 FileUtil.mkdir(filePath);
             }
-            // 文件存储形式：时间戳-文件名
+            // File storage: timestamp-filename
             FileUtil.writeBytes(file.getBytes(), filePath + flag + "-" + fileName);  // ***/manager/files/1697438073596-avatar.png
-            System.out.println(fileName + "--上传成功");
+            System.out.println(fileName + "-- upload successful");
 
         } catch (Exception e) {
-            System.err.println(fileName + "--文件上传失败");
+            System.err.println(fileName + "-- file upload failed");
         }
         String http = "http://" + ip + ":" + port + "/files/";
         return Result.success(http + flag + "-" + fileName);  //  http://localhost:9090/files/1697438073596-avatar.png
@@ -57,7 +57,7 @@ public class FileController {
 
 
     /**
-     * 获取文件
+     * Get file
      *
      * @param flag
      * @param response
@@ -76,19 +76,19 @@ public class FileController {
                 os.close();
             }
         } catch (Exception e) {
-            System.out.println("文件下载失败");
+            System.out.println("File download failed");
         }
     }
 
     /**
-     * 删除文件
+     * Delete file
      *
      * @param flag
      */
     @DeleteMapping("/{flag}")
     public void delFile(@PathVariable String flag) {
         FileUtil.del(filePath + flag);
-        System.out.println("删除文件" + flag + "成功");
+        System.out.println("File " + flag + " deleted successfully");
     }
 
 

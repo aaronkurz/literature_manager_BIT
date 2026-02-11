@@ -3,8 +3,8 @@ package com.example.common;
 import com.example.common.enums.ResultCodeEnum;
 
 /**
- * 通用返回结果类
- * @param <T> 数据类型泛型参数
+ * Common result class
+ * @param <T> Generic data type parameter
  */
 public class Result<T> {
     private String code;

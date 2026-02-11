@@ -1,22 +1,22 @@
 package com.example.common.enums;
 
 public enum ResultCodeEnum {
-    SUCCESS("200", "成功"),
-    TOKEN_NOT_EXIST_ERROR("4002", "token不存在"),
-    TOKEN_VERIFY_ERROR("4003", "token验证失败"),
+    SUCCESS("200", "Success"),
+    TOKEN_NOT_EXIST_ERROR("4002", "Token does not exist"),
+    TOKEN_VERIFY_ERROR("4003", "Token verification failed"),
 
-    PARAM_ERROR("400", "参数异常"),
-    TOKEN_INVALID_ERROR("401", "无效的token"),
-    TOKEN_CHECK_ERROR("401", "token验证失败，请重新登录"),
-    PARAM_LOST_ERROR("4001", "参数缺失"),
+    PARAM_ERROR("400", "Invalid parameter"),
+    TOKEN_INVALID_ERROR("401", "Invalid token"),
+    TOKEN_CHECK_ERROR("401", "Token verification failed, please log in again"),
+    PARAM_LOST_ERROR("4001", "Missing parameter"),
 
-    SYSTEM_ERROR("500", "系统异常"),
-    USER_EXIST_ERROR("5001", "用户名已存在"),
-    USER_NOT_LOGIN("5002", "用户未登录"),
-    USER_ACCOUNT_ERROR("5003", "账号或密码错误"),
-    USER_NOT_EXIST_ERROR("5004", "用户不存在"),
-    PARAM_PASSWORD_ERROR("5005", "原密码输入错误"),
-    NO_AUTH_ERROR("5006", "无权限访问"),
+    SYSTEM_ERROR("500", "System error"),
+    USER_EXIST_ERROR("5001", "Username already exists"),
+    USER_NOT_LOGIN("5002", "User not logged in"),
+    USER_ACCOUNT_ERROR("5003", "Incorrect username or password"),
+    USER_NOT_EXIST_ERROR("5004", "User not found"),
+    PARAM_PASSWORD_ERROR("5005", "Current password is incorrect"),
+    NO_AUTH_ERROR("5006", "Access denied"),
     ;
 
     public String code;
