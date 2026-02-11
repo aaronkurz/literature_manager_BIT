@@ -1,18 +1,18 @@
 <template>
   <div>
-    <!--头部-->
+    <!--Header-->
     <div class="front-header">
       <div class="front-header-left">
         <img src="@/assets/imgs/logo.png" alt="">
-        <div class="title">文献管理与分析系统</div>
+        <div class="title">Literature Management & Analysis System</div>
       </div>
       <div class="front-header-center">
         <div class="front-header-nav">
           <el-menu :default-active="$route.path" mode="horizontal" router>
-            <el-menu-item index="/front/graph">知识图谱</el-menu-item>
-            <el-menu-item index="/front/graph-personalization">图谱个性化</el-menu-item>
-            <el-menu-item index="/front/home">搜索</el-menu-item>
-            <el-menu-item index="/front/upload">论文上传</el-menu-item>
+            <el-menu-item index="/front/graph">Knowledge Graph</el-menu-item>
+            <el-menu-item index="/front/graph-personalization">Graph Personalization</el-menu-item>
+            <el-menu-item index="/front/home">Search</el-menu-item>
+            <el-menu-item index="/front/upload">Paper Upload</el-menu-item>
           </el-menu>
         </div>
       </div>
@@ -20,7 +20,7 @@
         <el-button icon="el-icon-setting" circle @click="$router.push('/front/settings')"></el-button>
       </div>
     </div>
-    <!--主体-->
+    <!--Main Content-->
     <div class="main-body">
       <router-view ref="child" />
     </div>

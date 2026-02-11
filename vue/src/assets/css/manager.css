@@ -125,7 +125,7 @@
     color: #ccc;
     height: 50px;
     line-height: 50px;
-    background-color: #222b40 !important; /* 必须加上这个背景色，否则鼠标离开会出现白色 */
+    background-color: #222b40 !important; /* Required background to prevent white flash on mouse leave */
 }
 
 .el-menu-item.is-active {

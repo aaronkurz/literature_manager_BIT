@@ -73,7 +73,7 @@ public class ArticleController {
             status.setFileName(paperFile.getOriginalFilename());
             status.setStatus("UPLOADING");
             status.setProgress(10);
-            status.setCurrentStep("文件上传成功");
+            status.setCurrentStep("File uploaded successfully");
             status.setFilePath(paperFilePath);
             processingStatusService.createStatus(status);
             
@@ -83,10 +83,10 @@ public class ArticleController {
             // Return taskId to frontend for status polling
             Map<String, String> result = new HashMap<>();
             result.put("taskId", taskId);
-            result.put("message", "文件上传成功，正在处理...");
+            result.put("message", "File uploaded, processing...");
             return Result.success(result);
         } catch (Exception e) {
-            return Result.error("500", "文件上传失败：" + e.getMessage());
+            return Result.error("500", "File upload failed: " + e.getMessage());
         }
     }
 
@@ -94,7 +94,7 @@ public class ArticleController {
     public Result<ProcessingStatus> getProcessingStatus(@PathVariable String taskId) {
         ProcessingStatus status = processingStatusService.getStatus(taskId);
         if (status == null) {
-            return Result.error("404", "任务不存在");
+            return Result.error("404", "Task not found");
         }
         return Result.success(status);
     }
@@ -104,11 +104,11 @@ public class ArticleController {
         try {
             ProcessingStatus status = processingStatusService.getStatus(taskId);
             if (status == null) {
-                return Result.error("404", "任务不存在");
+                return Result.error("404", "Task not found");
             }
             
             if (!"PENDING_APPROVAL".equals(status.getStatus())) {
-                return Result.error("400", "任务状态不正确");
+                return Result.error("400", "Invalid task status");
             }
             
             // Set file path from status
@@ -120,14 +120,14 @@ public class ArticleController {
             // Update status to approved
             status.setStatus("APPROVED");
             status.setProgress(100);
-            status.setCurrentStep("已批准并保存到数据库");
+            status.setCurrentStep("Approved and saved to database");
             processingStatusService.updateStatus(status);
             processingStatusService.markCompleted(taskId);
             
-            return Result.success("保存成功");
+            return Result.success("Saved successfully");
         } catch (Exception e) {
             e.printStackTrace();
-            return Result.error("500", "保存失败：" + e.getMessage());
+            return Result.error("500", "Save failed: " + e.getMessage());
         }
     }
     
@@ -136,7 +136,7 @@ public class ArticleController {
         try {
             ProcessingStatus status = processingStatusService.getStatus(taskId);
             if (status == null) {
-                return Result.error("404", "任务不存在");
+                return Result.error("404", "Task not found");
             }
             
             // Delete uploaded file
@@ -146,12 +146,12 @@ public class ArticleController {
             
             // Update status to rejected
             status.setStatus("REJECTED");
-            status.setCurrentStep("用户拒绝，已删除文件");
+            status.setCurrentStep("Rejected by user, file deleted");
             processingStatusService.updateStatus(status);
             
-            return Result.success("已拒绝并删除");
+            return Result.success("Rejected and deleted");
         } catch (Exception e) {
-            return Result.error("500", "操作失败：" + e.getMessage());
+            return Result.error("500", "Operation failed: " + e.getMessage());
         }
     }
 
@@ -202,10 +202,10 @@ public class ArticleController {
     @PostMapping("/rebuild")
     public Result<String> rebuildGraph() {
         try {
-            runNeo4jLoader(true, "前面为true时后面的字符串失效");
-            return Result.success("图谱重建成功");
+            runNeo4jLoader(true, "This string is ignored when first param is true");
+            return Result.success("Graph rebuilt successfully");
         } catch (Exception e) {
-            return Result.error("500", "图谱重建失败：" + e.getMessage());
+            return Result.error("500", "Graph rebuild failed: " + e.getMessage());
         }
     }
 }

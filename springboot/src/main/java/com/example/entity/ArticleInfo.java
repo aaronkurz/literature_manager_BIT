@@ -3,7 +3,7 @@ package com.example.entity;
 import java.io.Serializable;
 
 /**
- * 文章信息实体类
+ * Article information entity
  */
 public class ArticleInfo implements Serializable {
     private Integer id;
@@ -112,7 +112,7 @@ public class ArticleInfo implements Serializable {
 
     public void setOrgan(String organ) {
         if (organ != null && organ.length() > 255) {
-            System.out.println("警告: organ字段超过255字符，已截断 (原长度: " + organ.length() + ")");
+            System.out.println("Warning: organ field exceeds 255 chars, truncated (original length: " + organ.length() + ")");
             this.organ = organ.substring(0, 255);
         } else {
             this.organ = organ;
@@ -125,7 +125,7 @@ public class ArticleInfo implements Serializable {
 
     public void setSource(String source) {
         if (source != null && source.length() > 255) {
-            System.out.println("警告: source字段超过255字符，已截断 (原长度: " + source.length() + ")");
+            System.out.println("Warning: source field exceeds 255 chars, truncated (original length: " + source.length() + ")");
             this.source = source.substring(0, 255);
         } else {
             this.source = source;

@@ -2,14 +2,14 @@
   <div class="container">
     <div class="register-box">
       <div class="title-wrapper">
-        <div class="main-title">用户注册</div>
-        <div class="sub-title">开启您的数字旅程</div>
+        <div class="main-title">User Registration</div>
+        <div class="sub-title">Start your digital journey</div>
       </div>
       <el-form :model="form" :rules="rules" ref="formRef">
         <el-form-item prop="username">
           <el-input
               prefix-icon="el-icon-user"
-              placeholder="请输入账号"
+              placeholder="Enter username"
               v-model="form.username"
               class="custom-input"
               @focus="handleInputFocus"
@@ -20,7 +20,7 @@
         <el-form-item prop="password">
           <el-input
               prefix-icon="el-icon-lock"
-              placeholder="请输入密码"
+              placeholder="Enter password"
               show-password
               v-model="form.password"
               class="custom-input"
@@ -32,7 +32,7 @@
         <el-form-item prop="confirmPass">
           <el-input
               prefix-icon="el-icon-lock"
-              placeholder="请确认密码"
+              placeholder="Confirm password"
               show-password
               v-model="form.confirmPass"
               class="custom-input"
@@ -44,7 +44,7 @@
         <el-form-item prop="name">
           <el-input
               prefix-icon="el-icon-user"
-              placeholder="请输入姓名"
+              placeholder="Enter name"
               v-model="form.name"
               class="custom-input"
               @focus="handleInputFocus"
@@ -55,7 +55,7 @@
         <el-form-item prop="phone">
           <el-input
               prefix-icon="el-icon-phone"
-              placeholder="请输入手机号码"
+              placeholder="Enter phone number"
               v-model="form.phone"
               class="custom-input"
               @focus="handleInputFocus"
@@ -66,7 +66,7 @@
         <el-form-item prop="email">
           <el-input
               prefix-icon="el-icon-message"
-              placeholder="请输入邮箱"
+              placeholder="Enter email"
               v-model="form.email"
               class="custom-input"
               @focus="handleInputFocus"
@@ -80,13 +80,13 @@
               @mouseenter="handleBtnHover"
               @mouseleave="handleBtnLeave"
               @click="register">
-            立即注册
+            Register
           </el-button>
         </el-form-item>
 
         <div class="footer">
-          <span>已有账号？</span>
-          <a href="/login" class="login-link">立即登录</a>
+          <span>Already have an account?</span>
+          <a href="/login" class="login-link">Log in now</a>
         </div>
       </el-form>
     </div>
@@ -99,9 +99,9 @@ export default {
   data() {
     const validatePassword = (rule, confirmPass, callback) => {
       if (!confirmPass) {
-        callback(new Error('请确认密码'))
+        callback(new Error('Please confirm password'))
       } else if (confirmPass !== this.form.password) {
-        callback(new Error('两次输入的密码不一致'))
+        callback(new Error('Passwords do not match'))
       } else {
         callback()
       }
@@ -118,24 +118,24 @@ export default {
       },
       rules: {
         username: [
-          { required: true, message: '请输入账号', trigger: 'blur' },
-          { min: 3, max: 20, message: '长度在 3 到 20 个字符', trigger: 'blur' }
+          { required: true, message: 'Please enter username', trigger: 'blur' },
+          { min: 3, max: 20, message: 'Must be 3-20 characters', trigger: 'blur' }
         ],
         password: [
-          { required: true, message: '请输入密码', trigger: 'blur' },
-          { min: 6, max: 20, message: '长度在 6 到 20 个字符', trigger: 'blur' }
+          { required: true, message: 'Please enter password', trigger: 'blur' },
+          { min: 6, max: 20, message: 'Must be 6-20 characters', trigger: 'blur' }
         ],
         confirmPass: [
           { validator: validatePassword, trigger: 'blur' }
         ],
         name: [
-          { required: true, message: '请输入姓名', trigger: 'blur' }
+          { required: true, message: 'Please enter name', trigger: 'blur' }
         ],
         phone: [
-          { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号码', trigger: 'blur' }
+          { pattern: /^1[3-9]\d{9}$/, message: 'Please enter a valid phone number', trigger: 'blur' }
         ],
         email: [
-          { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' }
+          { type: 'email', message: 'Please enter a valid email address', trigger: 'blur' }
         ]
       }
     }
@@ -145,7 +145,7 @@ export default {
       const token = localStorage.getItem('token')
       const user = localStorage.getItem('xm-user')
       if (token || user) {
-        this.$message.warning('请先退出登录后再进行注册')
+        this.$message.warning('Please log out before registering')
         return
       }
 
@@ -159,7 +159,7 @@ export default {
             if (res.code === '200') {
               localStorage.removeItem('token')
               localStorage.removeItem('xm-user')
-              this.$message.success('注册成功')
+              this.$message.success('Registration successful')
               this.$router.push('./login')
             } else {
               this.$message.error(res.msg)

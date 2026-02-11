@@ -7,7 +7,7 @@ from PIL import Image
 
 
 def pdftotxt(input_dir, output_dir, pytesseract_dir):
-    # 设置Tesseract路径（跨平台兼容）
+    # Set Tesseract path (cross-platform)
     tesseract_exe = 'tesseract.exe' if sys.platform == 'win32' else 'tesseract'
     pytesseract.pytesseract.tesseract_cmd = os.path.join(pytesseract_dir, tesseract_exe)
 
@@ -20,7 +20,7 @@ def pdftotxt(input_dir, output_dir, pytesseract_dir):
         txt_path = os.path.join(output_dir, txt_filename)
 
         if os.path.exists(txt_path):
-            print(f"跳过已存在文件: {filename}")
+            print(f"Skipping existing file: {filename}")
             continue
 
         process_pdf(pdf_path, txt_path)
@@ -34,13 +34,13 @@ def process_pdf(pdf_path, txt_path):
             if page_text.strip():
                 text_content.append(page_text)
             else:
-                print(f"OCR处理中: {os.path.basename(pdf_path)} 第{page_num+1}页")
+                print(f"OCR processing: {os.path.basename(pdf_path)} page {page_num+1}")
                 text_content.append(ocr_page(page))
 
         save_text(txt_path, text_content)
-        print(f"成功转换: {os.path.basename(pdf_path)}")
+        print(f"Conversion successful: {os.path.basename(pdf_path)}")
     except Exception as e:
-        print(f"处理失败: {os.path.basename(pdf_path)} 错误: {str(e)}")
+        print(f"Processing failed: {os.path.basename(pdf_path)} error: {str(e)}")
 
 def ocr_page(page):
     pix = page.get_pixmap()

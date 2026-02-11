@@ -1,16 +1,16 @@
 <template>
   <div class="processing-container">
     <div class="header">
-      <h2>论文处理状态</h2>
+      <h2>Paper Processing Status</h2>
       <p class="filename">{{ status.fileName }}</p>
     </div>
 
     <!-- Progress Steps -->
     <el-steps :active="currentStepIndex" finish-status="success" align-center class="steps">
-      <el-step title="上传文件" description="文件已上传"></el-step>
-      <el-step title="格式转换" description="转换为PDF/TXT"></el-step>
-      <el-step title="提取元数据" description="使用AI提取信息"></el-step>
-      <el-step title="等待审核" description="确认信息"></el-step>
+      <el-step title="Upload File" description="File uploaded"></el-step>
+      <el-step title="Format Conversion" description="Convert to PDF/TXT"></el-step>
+      <el-step title="Extract Metadata" description="AI-powered extraction"></el-step>
+      <el-step title="Pending Review" description="Confirm information"></el-step>
     </el-steps>
 
     <!-- Progress Bar -->
@@ -26,7 +26,7 @@
     <!-- Error Message -->
     <el-alert
       v-if="status.status === 'FAILED'"
-      title="处理失败"
+      title="Processing Failed"
       type="error"
       :description="status.errorMessage"
       :closable="false"
@@ -36,37 +36,37 @@
 
     <!-- Metadata Review (when pending approval) -->
     <div v-if="status.status === 'PENDING_APPROVAL'" class="metadata-section">
-      <h3><i class="el-icon-document"></i> 提取的元数据</h3>
+      <h3><i class="el-icon-document"></i> Extracted Metadata</h3>
       <el-form label-position="left" label-width="100px" class="metadata-form">
-        <el-form-item label="标题">
+        <el-form-item label="Title">
           <el-input v-model="editableMetadata.title"></el-input>
         </el-form-item>
-        <el-form-item label="作者">
+        <el-form-item label="Author">
           <el-input v-model="editableMetadata.author"></el-input>
         </el-form-item>
-        <el-form-item label="单位">
+        <el-form-item label="Institution">
           <el-input v-model="editableMetadata.organ"></el-input>
         </el-form-item>
-        <el-form-item label="年份">
+        <el-form-item label="Year">
           <el-input v-model="editableMetadata.year"></el-input>
         </el-form-item>
-        <el-form-item label="来源">
+        <el-form-item label="Source">
           <el-input v-model="editableMetadata.source"></el-input>
         </el-form-item>
-        <el-form-item label="关键词">
+        <el-form-item label="Keywords">
           <el-input v-model="editableMetadata.keyword" type="textarea" :rows="2"></el-input>
         </el-form-item>
         <el-form-item label="DOI">
           <el-input v-model="editableMetadata.doi"></el-input>
         </el-form-item>
-        <el-form-item label="摘要">
+        <el-form-item label="Abstract">
           <el-input v-model="editableMetadata.summary" type="textarea" :rows="6"></el-input>
         </el-form-item>
       </el-form>
 
       <!-- Custom Concepts Section -->
       <div v-if="hasCustomConcepts" class="custom-concepts-section">
-        <h3><i class="el-icon-star-on"></i> 自定义概念识别</h3>
+        <h3><i class="el-icon-star-on"></i> Custom Concept Recognition</h3>
         <el-card 
           v-for="(concept, index) in customConcepts" 
           :key="index" 
@@ -83,32 +83,32 @@
               type="success"
               size="medium"
             >{{ value }}</el-tag>
-            <span v-if="concept.matchingConcepts.length === 0" class="no-match">未识别到匹配概念</span>
+            <span v-if="concept.matchingConcepts.length === 0" class="no-match">No matching concepts found</span>
           </div>
         </el-card>
       </div>
 
       <div class="action-buttons">
         <el-button type="success" size="large" @click="approve" :loading="isApproving">
-          <i class="el-icon-check"></i> 批准并添加到数据库
+          <i class="el-icon-check"></i> Approve & Add to Database
         </el-button>
         <el-button type="danger" size="large" @click="reject" :loading="isRejecting">
-          <i class="el-icon-close"></i> 拒绝并删除
+          <i class="el-icon-close"></i> Reject & Delete
         </el-button>
       </div>
     </div>
 
     <!-- Action buttons for other states -->
     <div v-if="status.status === 'FAILED'" class="action-buttons">
-      <el-button type="primary" @click="goBack">返回上传页面</el-button>
+      <el-button type="primary" @click="goBack">Back to Upload</el-button>
     </div>
 
     <div v-if="status.status === 'APPROVED'" class="success-message">
       <i class="el-icon-success"></i>
-      <h3>处理成功！</h3>
-      <p>论文已成功添加到数据库和知识图谱</p>
-      <el-button type="primary" @click="goToSearch">查看论文</el-button>
-      <el-button @click="goBack">继续上传</el-button>
+      <h3>Processing Complete!</h3>
+      <p>Paper has been successfully added to database and knowledge graph</p>
+      <el-button type="primary" @click="goToSearch">View Paper</el-button>
+      <el-button @click="goBack">Upload Another</el-button>
     </div>
   </div>
 </template>
@@ -124,7 +124,7 @@ export default {
         fileName: '',
         status: 'UPLOADING',
         progress: 0,
-        currentStep: '正在上传...',
+        currentStep: 'Uploading...',
         errorMessage: '',
         extractedTitle: '',
         extractedAuthors: '',
@@ -180,7 +180,7 @@ export default {
   mounted() {
     this.taskId = this.$route.params.taskId;
     if (!this.taskId) {
-      this.$message.error('缺少任务ID');
+      this.$message.error('Missing task ID');
       this.$router.push('/front/upload');
       return;
     }
@@ -236,7 +236,7 @@ export default {
                     });
                   }
                 } catch (e) {
-                  console.error('解析自定义概念失败:', e);
+                  console.error('Failed to parse custom concept:', e);
                 }
               }
             }
@@ -250,8 +250,8 @@ export default {
           }
         }
       } catch (error) {
-        console.error('获取状态失败:', error);
-        this.$message.error('获取处理状态失败');
+        console.error('Failed to fetch status:', error);
+        this.$message.error('Failed to get processing status');
       }
     },
     async approve() {
@@ -275,39 +275,39 @@ export default {
         
         const response = await axios.post(`http://localhost:9090/article/approve/${this.taskId}`, articleInfo);
         if (response.data.code === '200') {
-          this.$message.success('论文已成功添加到数据库！');
+          this.$message.success('Paper successfully added to database!');
           this.status.status = 'APPROVED';
           this.status.progress = 100;
         } else {
-          this.$message.error('保存失败：' + response.data.msg);
+          this.$message.error('Save failed: ' + response.data.msg);
         }
       } catch (error) {
-        console.error('批准失败:', error);
-        this.$message.error('批准失败：' + (error.response?.data?.msg || '服务器错误'));
+        console.error('Approve failed:', error);
+        this.$message.error('Approve failed: ' + (error.response?.data?.msg || 'Server error'));
       } finally {
         this.isApproving = false;
       }
     },
     async reject() {
-      this.$confirm('确定要拒绝并删除这篇论文吗？', '确认', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
+      this.$confirm('Are you sure you want to reject and delete this paper?', 'Confirm', {
+        confirmButtonText: 'OK',
+        cancelButtonText: 'Cancel',
         type: 'warning'
       }).then(async () => {
         this.isRejecting = true;
         try {
           const response = await axios.post(`http://localhost:9090/article/reject/${this.taskId}`);
           if (response.data.code === '200') {
-            this.$message.success('已拒绝并删除文件');
+            this.$message.success('Rejected and deleted');
             setTimeout(() => {
               this.$router.push('/front/upload');
             }, 1500);
           } else {
-            this.$message.error('操作失败：' + response.data.msg);
+            this.$message.error('Operation failed: ' + response.data.msg);
           }
         } catch (error) {
-          console.error('拒绝失败:', error);
-          this.$message.error('操作失败：' + (error.response?.data?.msg || '服务器错误'));
+          console.error('Reject failed:', error);
+          this.$message.error('Operation failed: ' + (error.response?.data?.msg || 'Server error'));
         } finally {
           this.isRejecting = false;
         }

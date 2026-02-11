@@ -1,14 +1,14 @@
 <template>
   <div class="upload-container">
-    <h2>论文上传</h2>
-    <p class="subtitle">上传PDF文件，系统将自动提取元数据和生成摘要</p>
+    <h2>Paper Upload</h2>
+    <p class="subtitle">Upload a PDF file and the system will automatically extract metadata and generate a summary</p>
     
     <el-form
         @submit.native.prevent="submitForm"
         label-position="top"
         class="upload-form"
     >
-      <el-form-item label="选择PDF文件">
+      <el-form-item label="Select PDF File">
         <el-upload
             :before-upload="handlePaperFile"
             accept=".pdf"
@@ -17,32 +17,32 @@
             drag
         >
           <i class="el-icon-upload"></i>
-          <div class="el-upload__text">将PDF文件拖到此处，或<em>点击上传</em></div>
-          <div class="el-upload__tip" slot="tip">仅支持PDF格式，文件大小不超过50MB</div>
+          <div class="el-upload__text">Drag PDF file here, or <em>click to upload</em></div>
+          <div class="el-upload__tip" slot="tip">Only PDF format, max 50MB</div>
         </el-upload>
       </el-form-item>
 
       <el-form-item class="button-group">
         <el-button type="primary" native-type="submit" :loading="isSubmitting" :disabled="!form.paperFile">
-          {{ isSubmitting ? '上传并处理中...' : '上传并处理' }}
+          {{ isSubmitting ? 'Uploading & Processing...' : 'Upload & Process' }}
         </el-button>
         <el-button type="warning" @click="resetForm" :disabled="isSubmitting">
-          重置
+          Reset
         </el-button>
       </el-form-item>
     </el-form>
 
     <div class="info-box">
-      <h3><i class="el-icon-info"></i> 处理流程</h3>
+      <h3><i class="el-icon-info"></i> Processing Workflow</h3>
       <ol>
-        <li>上传PDF文件</li>
-        <li>系统自动转换格式（PDF→TXT）</li>
-        <li>使用本地AI提取元数据（标题、作者、摘要等）</li>
-        <li>生成论文分析和摘要</li>
-        <li>查看并确认提取的信息</li>
-        <li>批准后自动添加到知识图谱</li>
+        <li>Upload PDF file</li>
+        <li>Automatic format conversion (PDF→TXT)</li>
+        <li>Extract metadata using local AI (title, author, abstract, etc.)</li>
+        <li>Generate paper analysis and summary</li>
+        <li>Review and confirm extracted information</li>
+        <li>Automatically add to knowledge graph after approval</li>
       </ol>
-      <p class="note">注意：处理过程可能需要1-2分钟，请在审核页面确认提取的信息后再添加到数据库</p>
+      <p class="note">Note: Processing may take 1-2 minutes. Please confirm extracted information on the review page before adding to the database</p>
     </div>
   </div>
 </template>
@@ -64,7 +64,7 @@ export default {
     handlePaperFile(file) {
       const isLt50M = file.size / 1024 / 1024 < 50;
       if (!isLt50M) {
-        this.$message.error('文件大小不能超过 50MB!');
+        this.$message.error('File size must not exceed 50MB!');
         return false;
       }
       this.form.paperFile = file;
@@ -73,7 +73,7 @@ export default {
     },
     async submitForm() {
       if (!this.form.paperFile) {
-        this.$message.error('请上传PDF文件');
+        this.$message.error('Please upload a PDF file');
         return;
       }
 
@@ -88,7 +88,7 @@ export default {
         
         if (response.data.code === '200') {
           const taskId = response.data.data.taskId;
-          this.$message.success('文件上传成功，正在处理...');
+          this.$message.success('File uploaded successfully, processing...');
           
           // Redirect to processing status page
           this.$router.push({
@@ -96,12 +96,12 @@ export default {
             params: { taskId: taskId }
           });
         } else {
-          this.$message.error('上传失败：' + response.data.msg);
+          this.$message.error('Upload failed: ' + response.data.msg);
           this.isSubmitting = false;
         }
       } catch (error) {
-        console.error('提交失败:', error);
-        this.$message.error('提交失败：' + (error.response?.data?.msg || '服务器错误'));
+        console.error('Submission failed:', error);
+        this.$message.error('Submission failed: ' + (error.response?.data?.msg || 'Server error'));
         this.isSubmitting = false;
       }
     },

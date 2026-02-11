@@ -10,16 +10,16 @@ import java.util.concurrent.TimeUnit;
 import java.nio.charset.StandardCharsets;
 
 public class Pdf2docx {
-    private static final String PY_SCRIPT = Config.PDF2DOCX_PY_SCRIPT; // Python脚本路径
-    private static final String INPUT_DIR = Config.PDF_PATH; // PDF输入目录
-    private static final String OUTPUT_DIR = Config.DOCX_PATH; // DOCX输出目录
-    private static final int TIMEOUT_MINUTES = Config.PDF2DOCX_TIMEOUT_MINUTES; // 超时时间
+    private static final String PY_SCRIPT = Config.PDF2DOCX_PY_SCRIPT; // Python script path
+    private static final String INPUT_DIR = Config.PDF_PATH; // PDF input directory
+    private static final String OUTPUT_DIR = Config.DOCX_PATH; // DOCX output directory
+    private static final int TIMEOUT_MINUTES = Config.PDF2DOCX_TIMEOUT_MINUTES; // Timeout
 
     public static void runPdfToDocx() {
         try {
             convertAllPdfFiles();
         } catch (Exception e) {
-            LogUtil_pdf2docx.log("程序异常: " + e.getMessage());
+            LogUtil_pdf2docx.log("Program error: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -36,7 +36,7 @@ public class Pdf2docx {
         );
 
         if (pdfFiles == null || pdfFiles.length == 0) {
-            LogUtil_pdf2docx.log("未找到PDF文件");
+            LogUtil_pdf2docx.log("No PDF files found");
             return;
         }
 
@@ -47,18 +47,18 @@ public class Pdf2docx {
 
     private static void validateDirectories(File inputDir, File outputDir) throws IOException {
         if (!inputDir.exists() || !inputDir.isDirectory()) {
-            throw new IOException("PDF输入目录不存在: " + inputDir.getAbsolutePath());
+            throw new IOException("PDF input directory not found: " + inputDir.getAbsolutePath());
         }
 
         if (!outputDir.exists() && !outputDir.mkdirs()) {
-            throw new IOException("无法创建输出目录: " + outputDir.getAbsolutePath());
+            throw new IOException("Failed to create output directory: " + outputDir.getAbsolutePath());
         }
     }
 
     private static void validatePythonScript() throws IOException {
         File script = new File(PY_SCRIPT);
         if (!script.exists()) {
-            throw new IOException("Python脚本未找到: " + script.getAbsolutePath());
+            throw new IOException("Python script not found: " + script.getAbsolutePath());
         }
     }
 
@@ -68,16 +68,16 @@ public class Pdf2docx {
         File docxFile = new File(outputDir, docxName);
 
         if (docxFile.exists()) {
-            LogUtil_pdf2docx.log("跳过已转换文件: " + pdfFile.getName());
+            LogUtil_pdf2docx.log("Skipping already converted file: " + pdfFile.getName());
             return;
         }
 
-        LogUtil_pdf2docx.log("开始处理: " + pdfFile.getName());
+        LogUtil_pdf2docx.log("Processing: " + pdfFile.getName());
 
-        // 使用绝对路径调用Python脚本
+        // Call Python script with absolute path
         String[] command = {
                 "python3",
-                "-u", // 强制无缓冲输出
+                "-u", // Force unbuffered output
                 PY_SCRIPT,
                 pdfFile.getAbsolutePath(),
                 docxFile.getAbsolutePath()
@@ -88,33 +88,33 @@ public class Pdf2docx {
 
         Process process = pb.start();
 
-        // 启动独立线程读取输出
+        // Start thread to read output
         Thread outputThread = new Thread(() -> {
             try (BufferedReader reader = new BufferedReader(
                     new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    LogUtil_pdf2docx.log("[PY] " + line); // 将Python输出写入日志
+                    LogUtil_pdf2docx.log("[PY] " + line); // Write Python output to log
                 }
             } catch (IOException e) {
-                LogUtil_pdf2docx.log("读取Python输出失败: " + e.getMessage());
+                LogUtil_pdf2docx.log("Failed to read Python output: " + e.getMessage());
             }
         });
         outputThread.start();
 
-        // 设置超时控制
+        // Set timeout
         boolean finished = process.waitFor(TIMEOUT_MINUTES, TimeUnit.MINUTES);
         if (!finished) {
             process.destroyForcibly();
-            LogUtil_pdf2docx.log("转换超时: " + pdfFile.getName());
+            LogUtil_pdf2docx.log("Conversion timeout: " + pdfFile.getName());
             return;
         }
 
         int exitCode = process.exitValue();
         if (exitCode == 0) {
-            LogUtil_pdf2docx.log("转换成功: " + pdfFile.getName());
+            LogUtil_pdf2docx.log("Conversion successful: " + pdfFile.getName());
         } else {
-            LogUtil_pdf2docx.log("转换失败: " + pdfFile.getName() + " (退出码: " + exitCode + ")");
+            LogUtil_pdf2docx.log("Conversion failed: " + pdfFile.getName() + " (exit code: " + exitCode + ")");
         }
     }
 }

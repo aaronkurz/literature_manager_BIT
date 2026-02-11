@@ -23,15 +23,15 @@ public class Config {
     public static final String DOCX_PATH = UPLOAD_PATH;
     public static final String CAJ_PATH = UPLOAD_PATH;
 
-    //caj转pdf配置
+    // CAJ to PDF config
     public static final String CAJ2PDF_CONVERTER_EXE = "E:\\manager\\springboot\\src\\main\\java\\com\\example\\utils\\Caj2pdf\\caj2pdf.exe";
     public static final String CAJ2PDF_MUTOOL_EXE = "E:\\manager\\springboot\\src\\main\\java\\com\\example\\utils\\Caj2pdf\\mutool.exe";
 
-    //pdf转docx配置
+    // PDF to DOCX config
     public static final String PDF2DOCX_PY_SCRIPT = System.getenv().getOrDefault("PDF2DOCX_PY_SCRIPT", "/app/scripts/pdf_converter.py");
     public static final int PDF2DOCX_TIMEOUT_MINUTES = Integer.parseInt(System.getenv().getOrDefault("PDF2DOCX_TIMEOUT_MINUTES", "30"));
 
-    //pdf2txt配置
+    // PDF to TXT config
     public static final String PDF2TXT_PY_SCRIPT = System.getenv().getOrDefault("PDF2TXT_PY_SCRIPT", "/app/scripts/pdf_to_text.py");
     public static final int PDF2TXT_TIMEOUT_MINUTES = Integer.parseInt(System.getenv().getOrDefault("PDF2TXT_TIMEOUT_MINUTES", "30"));
     public static final String OCR_PATH = System.getenv().getOrDefault("OCR_PATH", "/usr/bin");
@@ -40,39 +40,39 @@ public class Config {
     // Simplified JSON prompt for metadata extraction from academic papers
     public static final String METADATA_EXTRACTION_JSON = """
             {
-            "title": "论文的完整标题",
-            "author": "作者姓名，多个作者用分号分隔",
-            "organ": "作者单位/机构",
-            "year": "发表年份，仅数字",
-            "pubTime": "发表时间，格式YYYY-MM-DD",
-            "source": "期刊或会议名称",
-            "keyword": "关键词，用分号分隔",
-            "summary": "论文摘要，完整提取",
-            "doi": "DOI编号（如果有）",
-            "pageCount": "页数"
+            "title": "Full title of the paper",
+            "author": "Author names, separated by semicolons",
+            "organ": "Author institution/organization",
+            "year": "Publication year, numbers only",
+            "pubTime": "Publication date, format YYYY-MM-DD",
+            "source": "Journal or conference name",
+            "keyword": "Keywords, separated by semicolons",
+            "summary": "Paper abstract, extract in full",
+            "doi": "DOI number (if available)",
+            "pageCount": "Page count"
             }""";
 
     // Simplified JSON prompt for single summary length (mid-length ~50 chars)
     public static final String SUMMARY_JSON = """
             {
-            "summary1": "第1种对论文摘要的总结凝练，50字左右",
-            "summary2": "第2种对论文摘要的总结凝练，50字左右",
-            "summary3": "第3种对论文摘要的总结凝练，50字左右",
-            "summary4": "第4种对论文摘要的总结凝练，50字左右",
-            "summary5": "第5种对论文摘要的总结凝练，50字左右",
-            "summary6": "第6种对论文摘要的总结凝练，50字左右，要用通俗易懂的语言",
-            "target": "用通俗易懂的语言简述论文的研究动机",
-            "algorithm1": "第1种介绍本文用到的核心算法，50字左右",
-            "algorithm2": "第2种介绍本文用到的核心算法，50字左右",
-            "algorithm3": "第3种介绍本文用到的核心算法，50字左右",
-            "algorithm4": "第4种介绍本文用到的核心算法，50字左右，用通俗易懂的语言",
-            "environment": "详细介绍本论文的实验环境",
-            "tools": "详细介绍本论文的实验工具",
-            "datas": "详细介绍本论文的实验数据",
-            "standard": "详细介绍本论文的实验指标",
-            "result": "详细介绍本论文的实验结果",
-            "future": "从不同角度尽可能详细介绍本论文对未来工作的总结与展望",
-            "weekpoint": "从不同角度尽可能详细介绍本论文已有研究的不足之处",
-            "keyword": "文本的关键词，用;分隔",
-            "fullSummary": "提取论文完整摘要"}""";
+            "summary1": "1st summary of paper abstract, ~50 words",
+            "summary2": "2nd summary of paper abstract, ~50 words",
+            "summary3": "3rd summary of paper abstract, ~50 words",
+            "summary4": "4th summary of paper abstract, ~50 words",
+            "summary5": "5th summary of paper abstract, ~50 words",
+            "summary6": "6th summary of paper abstract, ~50 words, in plain language",
+            "target": "Brief research motivation in plain language",
+            "algorithm1": "1st description of core algorithms, ~50 words",
+            "algorithm2": "2nd description of core algorithms, ~50 words",
+            "algorithm3": "3rd description of core algorithms, ~50 words",
+            "algorithm4": "4th description of core algorithms, ~50 words, in plain language",
+            "environment": "Detailed description of experimental environment",
+            "tools": "Detailed description of experimental tools",
+            "datas": "Detailed description of experimental data",
+            "standard": "Detailed description of evaluation metrics",
+            "result": "Detailed description of experimental results",
+            "future": "Detailed future work and outlook from multiple perspectives",
+            "weekpoint": "Detailed limitations of existing research from multiple perspectives",
+            "keyword": "Keywords of the text, separated by ;",
+            "fullSummary": "Extract full paper abstract"}""";
 }

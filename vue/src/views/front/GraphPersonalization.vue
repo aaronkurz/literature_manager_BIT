@@ -1,33 +1,33 @@
 <template>
   <div class="personalization-container">
     <div class="header">
-      <h2>图谱个性化设置</h2>
-      <p class="description">自定义论文概念关系，最多3个组合，每个组合最多5个概念</p>
+      <h2>Graph Personalization Settings</h2>
+      <p class="description">Customize paper concept relationships, up to 3 groups, each with up to 5 concepts</p>
     </div>
 
     <el-card v-for="order in [1, 2, 3]" :key="order" class="concept-card" shadow="hover">
       <div slot="header" class="card-header">
-        <span>概念组合 {{ order }}</span>
+        <span>Concept Group {{ order }}</span>
         <el-button 
           v-if="concepts[order - 1] && concepts[order - 1].relationshipName"
           type="danger" 
           size="small" 
           @click="deleteConcept(order)"
           icon="el-icon-delete"
-        >删除</el-button>
+        >Delete</el-button>
       </div>
 
       <el-form :model="concepts[order - 1]" label-width="120px">
-        <el-form-item label="关系名称">
+        <el-form-item label="Relationship Name">
           <el-input 
             v-model="concepts[order - 1].relationshipName" 
             placeholder="例如: method, dataset, evaluation_metric"
             :maxlength="50"
           ></el-input>
-          <div class="tip">语义上有意义的关系名称，用于描述论文与概念之间的联系</div>
+          <div class="tip">A meaningful relationship name describing the link between paper and concepts</div>
         </el-form-item>
 
-        <el-form-item label="概念列表">
+        <el-form-item label="Concept List">
           <div class="concepts-input">
             <el-tag
               v-for="(concept, index) in concepts[order - 1].conceptsList"
@@ -45,7 +45,7 @@
               class="input-new-concept"
               @keyup.enter.native="addConcept(order)"
               @blur="addConcept(order)"
-              placeholder="输入概念名称"
+              placeholder="Enter concept name"
               :maxlength="100"
             ></el-input>
             
@@ -55,10 +55,10 @@
               @click="showInputForConcept(order)"
               :disabled="concepts[order - 1].conceptsList.length >= 5"
               class="button-new-concept"
-            >+ 添加概念</el-button>
+            >+ Add Concept</el-button>
           </div>
           <div class="tip">
-            最多5个概念。例如: RCT, Retrospective_Cohort, Prospective_Cohort, Mendelian_Randomization_Study
+            Up to 5 concepts. Example: RCT, Retrospective_Cohort, Prospective_Cohort, Mendelian_Randomization_Study
           </div>
         </el-form-item>
 
@@ -68,9 +68,9 @@
             @click="saveConcept(order)"
             :disabled="!canSave(order)"
             :loading="saving[order - 1]"
-          >保存概念组合</el-button>
+          >Save Concept Group</el-button>
           <span v-if="concepts[order - 1].id" class="save-tip">
-            <i class="el-icon-success"></i> 已保存
+            <i class="el-icon-success"></i> Saved
           </span>
         </el-form-item>
       </el-form>
@@ -78,13 +78,13 @@
 
     <div class="info-section">
       <el-alert type="info" :closable="false">
-        <h4>使用说明</h4>
+        <h4>Instructions</h4>
         <ul>
-          <li><strong>关系名称</strong>：描述论文与概念之间的关系类型（如 method、dataset、evaluation_metric）</li>
-          <li><strong>概念列表</strong>：可能适用于论文的具体概念值（如 RCT、Cohort Study）</li>
-          <li>在上传论文时，AI会自动识别论文中是否使用了这些概念</li>
-          <li>在知识图谱中可以按照自定义概念进行过滤和查询</li>
-          <li>概念名称建议使用英文或英文缩写，避免使用特殊字符</li>
+          <li><strong>Relationship Name</strong>: Describes the relationship type between papers and concepts (e.g., method, dataset, evaluation_metric)</li>
+          <li><strong>Concept List</strong>: Specific concept values that may apply to papers (e.g., RCT, Cohort Study)</li>
+          <li>When uploading papers, AI will automatically identify if these concepts are used</li>
+          <li>Custom concepts can be used to filter and query in the knowledge graph</li>
+          <li>Concept names should use English or abbreviations, avoid special characters</li>
         </ul>
       </el-alert>
     </div>
@@ -139,8 +139,8 @@ export default {
           });
         }
       } catch (error) {
-        console.error('加载自定义概念失败:', error);
-        this.$message.error('加载失败');
+        console.error('Failed to load custom concepts:', error);
+        this.$message.error('Loading failed');
       } finally {
         this.loading = false;
       }
@@ -149,7 +149,7 @@ export default {
     showInputForConcept(order) {
       const index = order - 1;
       if (this.concepts[index].conceptsList.length >= 5) {
-        this.$message.warning('每个组合最多5个概念');
+        this.$message.warning('Maximum 5 concepts per group');
         return;
       }
       this.$set(this.showConceptInput, index, true);
@@ -166,9 +166,9 @@ export default {
       
       if (concept) {
         if (this.concepts[index].conceptsList.length >= 5) {
-          this.$message.warning('每个组合最多5个概念');
+          this.$message.warning('Maximum 5 concepts per group');
         } else if (this.concepts[index].conceptsList.includes(concept)) {
-          this.$message.warning('概念已存在');
+          this.$message.warning('Concept already exists');
         } else {
           this.concepts[index].conceptsList.push(concept);
         }
@@ -192,7 +192,7 @@ export default {
       const concept = this.concepts[index];
       
       if (!this.canSave(order)) {
-        this.$message.warning('请填写关系名称并至少添加一个概念');
+        this.$message.warning('Please enter a relationship name and add at least one concept');
         return;
       }
       
@@ -208,30 +208,30 @@ export default {
         const response = await axios.post('http://localhost:9090/custom-concepts/save', data);
         
         if (response.data.code === '200') {
-          this.$message.success('保存成功');
+          this.$message.success('Saved successfully');
           // Reload to get the saved ID and ensure data is fresh
           await this.loadConcepts();
         } else {
-          this.$message.error(response.data.msg || '保存失败');
+          this.$message.error(response.data.msg || 'Save failed');
         }
       } catch (error) {
-        console.error('保存失败:', error);
-        this.$message.error('保存失败：' + (error.response?.data?.msg || '服务器错误'));
+        console.error('Save failed:', error);
+        this.$message.error('Save failed: ' + (error.response?.data?.msg || 'Server error'));
       } finally {
         this.$set(this.saving, index, false);
       }
     },
     
     async deleteConcept(order) {
-      this.$confirm('确定要删除这个概念组合吗？', '确认', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
+      this.$confirm('Are you sure you want to delete this concept group?', 'Confirm', {
+        confirmButtonText: 'OK',
+        cancelButtonText: 'Cancel',
         type: 'warning'
       }).then(async () => {
         try {
           const response = await axios.delete(`http://localhost:9090/custom-concepts/${order}`);
           if (response.data.code === '200') {
-            this.$message.success('删除成功');
+            this.$message.success('Deleted successfully');
             const index = order - 1;
             this.concepts[index] = {
               id: null,
@@ -240,11 +240,11 @@ export default {
               displayOrder: order
             };
           } else {
-            this.$message.error(response.data.msg || '删除失败');
+            this.$message.error(response.data.msg || 'Delete failed');
           }
         } catch (error) {
-          console.error('删除失败:', error);
-          this.$message.error('删除失败');
+          console.error('Delete failed:', error);
+          this.$message.error('Delete failed');
         }
       }).catch(() => {
         // User cancelled

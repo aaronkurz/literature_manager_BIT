@@ -1,12 +1,12 @@
 <template>
   <div>
     <div class="card" style="padding: 15px">
-      您好，{{ user?.name }}！欢迎使用本系统
+      Hello, {{ user?.name }}! Welcome to the system
     </div>
 
     <div style="display: flex; margin: 10px 0">
       <div style="width: 50%;" class="card">
-        <div style="margin-bottom: 30px; font-size: 20px; font-weight: bold">公告列表</div>
+        <div style="margin-bottom: 30px; font-size: 20px; font-weight: bold">Announcements</div>
         <div >
           <el-timeline  reverse slot="reference">
             <el-timeline-item v-for="item in notices" :key="item.id" :timestamp="item.time">

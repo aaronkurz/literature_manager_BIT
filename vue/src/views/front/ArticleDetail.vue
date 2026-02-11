@@ -5,44 +5,44 @@
       <el-divider class="custom-divider"></el-divider>
 
 
-      <!-- 下载按钮区域 -->
+      <!-- Download Buttons -->
       <div class="download-section" v-if="filePaths">
-        <h3>文件下载</h3>
+        <h3>File Download</h3>
         <div class="download-buttons">
           <el-button v-if="filePaths.patha" type="primary" size="small" @click="downloadFile('patha', title, filePaths.patha)">
-            下载原文
+            Download Original
           </el-button>
           <el-button v-if="filePaths.pathb" type="success" size="small" @click="downloadFile('pathb', title, filePaths.pathb)">
-            下载附件
+            Download Attachment
           </el-button>
           <el-button v-if="filePaths.pathdocx" type="warning" size="small" @click="downloadFile('pathdocx', title, filePaths.pathdocx)">
-            下载DOCX
+            Download DOCX
           </el-button>
           <el-button v-if="filePaths.pathpdf" type="info" size="small" @click="downloadFile('pathpdf', title, filePaths.pathpdf)">
-            下载PDF
+            Download PDF
           </el-button>
         </div>
       </div>
 
-      <!-- 对比页面顶部教师模型展示 -->
+      <!-- Comparison - Teacher model display -->
       <div v-if="isComparison" class="model-display-section">
-        <h3>评判模型</h3>
+        <h3>Evaluation Model</h3>
         <div class="model-list">
           <div class="model-item">
-            <span class="model-label">教师模型:</span>
-            <span class="model-value">{{ teacherSummary.model || '未指定模型' }}</span>
+            <span class="model-label">Teacher Model:</span>
+            <span class="model-value">{{ teacherSummary.model || 'Model not specified' }}</span>
           </div>
           <div class="model-item" v-for="(student, index) in studentSummaries" :key="index">
-            <span class="model-label">学生模型{{ index + 1 }}:</span>
+            <span class="model-label">Student Model {{ index + 1 }}:</span>
             <span class="model-value">
-              {{ student.model || '未指定模型' }}
-              <span class="model-position">{{ index === 0 ? '（左侧）' : '（右侧）' }}</span>
+              {{ student.model || 'Model not specified' }}
+              <span class="model-position">{{ index === 0 ? ' (Left)' : ' (Right)' }}</span>
             </span>
           </div>
         </div>
       </div>
 
-      <!-- 单个summary展示 -->
+      <!-- Single summary display -->
       <div v-if="!isComparison">
         <div class="section" v-for="(group, groupName) in fieldGroups" :key="groupName" v-if="hasContent(summary, group.fields)">
           <h3>{{ group.title }}</h3>
@@ -53,7 +53,7 @@
         </div>
       </div>
 
-      <!-- 对比展示 -->
+      <!-- Comparison display -->
       <div v-if="isComparison" class="comparison-section">
         <div class="field-group" v-for="(group, groupName) in fieldGroups" :key="groupName">
           <h3>{{ group.title }}</h3>
@@ -64,7 +64,7 @@
                 <div v-for="(student, index) in studentSummaries" :key="index"
                      class="content-item"
                      :class="{ 'highlight-card': teacherSummary[field] === (index + 1).toString() }">
-                  <div>{{ student[field] || '无内容' }}</div>
+                  <div>{{ student[field] || 'No content' }}</div>
                 </div>
               </div>
             </div>
@@ -90,39 +90,39 @@ export default {
       studentSummaries: [],
       fieldGroups: {
         // title: { title: '标题', fields: ['title'] },
-        keyword: { title: '关键词', fields: ['keyword'] },
-        target: { title: '研究目标', fields: ['target'] },
-        summary: { title: '摘要', fields: ['summary'] },
-        short: { title: '30字总结', fields: ['short1', 'short2', 'short3', 'short4', 'short5', 'short6'] },
-        mid: { title: '50字总结', fields: ['mid1', 'mid2', 'mid3', 'mid4', 'mid5', 'mid6'] },
-        long: { title: '100字总结', fields: ['long1', 'long2', 'long3', 'long4', 'long5', 'long6'] },
-        algmid: { title: '算法 50字', fields: ['algmid1', 'algmid2', 'algmid3', 'algmid4'] },
-        alglong: { title: '算法 100字', fields: ['alglong1', 'alglong2', 'alglong3', 'alglong4'] },
-        environment: { title: '研究环境', fields: ['environment'] },
-        tools: { title: '研究工具', fields: ['tools'] },
-        datas: { title: '研究数据', fields: ['datas'] },
-        standard: { title: '实验指标', fields: ['standard'] },
-        result: { title: '实验结果', fields: ['result'] },
-        future: { title: '未来展望', fields: ['future'] },
-        weekpoint: { title: '不足之处', fields: ['weekpoint'] }
+        keyword: { title: 'Keywords', fields: ['keyword'] },
+        target: { title: 'Research Objective', fields: ['target'] },
+        summary: { title: 'Abstract', fields: ['summary'] },
+        short: { title: 'Short Summary (30 words)', fields: ['short1', 'short2', 'short3', 'short4', 'short5', 'short6'] },
+        mid: { title: 'Medium Summary (50 words)', fields: ['mid1', 'mid2', 'mid3', 'mid4', 'mid5', 'mid6'] },
+        long: { title: 'Long Summary (100 words)', fields: ['long1', 'long2', 'long3', 'long4', 'long5', 'long6'] },
+        algmid: { title: 'Algorithm (50 words)', fields: ['algmid1', 'algmid2', 'algmid3', 'algmid4'] },
+        alglong: { title: 'Algorithm (100 words)', fields: ['alglong1', 'alglong2', 'alglong3', 'alglong4'] },
+        environment: { title: 'Research Environment', fields: ['environment'] },
+        tools: { title: 'Research Tools', fields: ['tools'] },
+        datas: { title: 'Research Data', fields: ['datas'] },
+        standard: { title: 'Evaluation Metrics', fields: ['standard'] },
+        result: { title: 'Experimental Results', fields: ['result'] },
+        future: { title: 'Future Work', fields: ['future'] },
+        weekpoint: { title: 'Limitations', fields: ['weekpoint'] }
       },
       fieldDisplayMap: {
         // 'title': '标题',
-        'keyword': '关键词',
-        'target': '研究目标',
-        'summary': '摘要',
-        'short1': '简短介绍1', 'short2': '简短介绍2', 'short3': '简短介绍3', 'short4': '简短介绍4', 'short5': '简短介绍5', 'short6': '通俗版',
-        'mid1': '中等介绍1', 'mid2': '中等介绍2', 'mid3': '中等介绍3', 'mid4': '中等介绍4', 'mid5': '中等介绍5', 'mid6': '通俗版',
-        'long1': '详细介绍1', 'long2': '详细介绍2', 'long3': '详细介绍3', 'long4': '详细介绍4', 'long5': '详细介绍5', 'long6': '通俗版',
-        'algmid1': '算法简述1', 'algmid2': '算法简述2', 'algmid3': '算法简述3', 'algmid4': '通俗版',
-        'alglong1': '算法详述1', 'alglong2': '算法详述2', 'alglong3': '算法详述3', 'alglong4': '通俗版',
-        'environment': '研究环境',
-        'tools': '研究工具',
-        'datas': '研究数据',
-        'standard': '实验指标',
-        'result': '实验结果',
-        'future': '未来展望',
-        'weekpoint': '不足之处'
+        'keyword': 'Keywords',
+        'target': 'Research Objective',
+        'summary': 'Abstract',
+        'short1': 'Short Intro 1', 'short2': 'Short Intro 2', 'short3': 'Short Intro 3', 'short4': 'Short Intro 4', 'short5': 'Short Intro 5', 'short6': 'Simplified',
+        'mid1': 'Medium Intro 1', 'mid2': 'Medium Intro 2', 'mid3': 'Medium Intro 3', 'mid4': 'Medium Intro 4', 'mid5': 'Medium Intro 5', 'mid6': 'Simplified',
+        'long1': 'Detailed Intro 1', 'long2': 'Detailed Intro 2', 'long3': 'Detailed Intro 3', 'long4': 'Detailed Intro 4', 'long5': 'Detailed Intro 5', 'long6': 'Simplified',
+        'algmid1': 'Algorithm Brief 1', 'algmid2': 'Algorithm Brief 2', 'algmid3': 'Algorithm Brief 3', 'algmid4': 'Simplified',
+        'alglong1': 'Algorithm Detail 1', 'alglong2': 'Algorithm Detail 2', 'alglong3': 'Algorithm Detail 3', 'alglong4': 'Simplified',
+        'environment': 'Research Environment',
+        'tools': 'Research Tools',
+        'datas': 'Research Data',
+        'standard': 'Evaluation Metrics',
+        'result': 'Experimental Results',
+        'future': 'Future Work',
+        'weekpoint': 'Limitations'
       }
     }
   },
@@ -154,13 +154,13 @@ export default {
             this.studentSummaries = studentSummaries
             this.isComparison = true
           } else {
-            this.$message.error('数据格式错误')
+            this.$message.error('Data format error')
           }
         } else {
-          this.$message.error('数据数量错误')
+          this.$message.error('Data count error')
         }
       } catch (error) {
-        this.$message.error('获取文章详情失败')
+        this.$message.error('Failed to load article details')
         console.error('Error fetching article summary:', error)
       }
     },
@@ -169,7 +169,7 @@ export default {
         const res = await request.get(`/article/file-paths/${title}`)
         this.filePaths = res.data || {}
       } catch (error) {
-        this.$message.error('获取文件路径失败')
+        this.$message.error('Failed to load file paths')
         console.error('Error fetching file paths:', error)
       }
     },
@@ -192,7 +192,7 @@ export default {
         document.body.removeChild(link)
         window.URL.revokeObjectURL(url)
       } catch (error) {
-        this.$message.error('文件下载失败')
+        this.$message.error('File download failed')
         console.error('Error downloading file:', error)
       }
     }
@@ -239,7 +239,7 @@ export default {
   height: 2px;
 }
 
-/* 教师模型展示区域样式 */
+/* Teacher model display section styles */
 .model-display-section {
   margin-bottom: 35px;
   padding: 20px;

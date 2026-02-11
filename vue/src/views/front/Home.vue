@@ -4,27 +4,27 @@
       <el-form :inline="true" :model="searchForm" class="search-form">
         <el-select
             v-model="searchForm.selectedField"
-            placeholder="搜索字段"
+            placeholder="Search field"
             style="width: 120px;"
         >
-          <el-option label="标题" value="title"></el-option>
-          <el-option label="作者" value="author"></el-option>
-          <el-option label="单位" value="organ"></el-option>
-          <el-option label="来源库" value="srcDatabase"></el-option>
-          <el-option label="文献来源" value="source"></el-option>
-          <el-option label="关键词" value="keyword"></el-option>
-          <el-option label="摘要" value="summary"></el-option>
-          <el-option label="年份" value="year"></el-option>
-          <el-option label="基金" value="fund"></el-option>
+          <el-option label="Title" value="title"></el-option>
+          <el-option label="Author" value="author"></el-option>
+          <el-option label="Institution" value="organ"></el-option>
+          <el-option label="Source DB" value="srcDatabase"></el-option>
+          <el-option label="Source" value="source"></el-option>
+          <el-option label="Keywords" value="keyword"></el-option>
+          <el-option label="Abstract" value="summary"></el-option>
+          <el-option label="Year" value="year"></el-option>
+          <el-option label="Fund" value="fund"></el-option>
         </el-select>
         <el-input
             v-model="searchForm.inputValue"
-            placeholder="请输入搜索内容"
+            placeholder="Enter search content"
             style="width: 300px;"
             @keyup.enter.native="handleSearch"
         ></el-input>
-        <el-button type="primary" @click="handleSearch" style="margin-left:10px">搜索</el-button>
-        <el-button @click="resetForm">重置</el-button>
+        <el-button type="primary" @click="handleSearch" style="margin-left:10px">Search</el-button>
+        <el-button @click="resetForm">Reset</el-button>
       </el-form>
     </div>
 
@@ -39,40 +39,40 @@
         </div>
         <div class="article-info">
           <div class="info-row">
-            <p><strong>作者：</strong><span v-html="highlightText(article.author)"></span></p>
+            <p><strong>Author: </strong><span v-html="highlightText(article.author)"></span></p>
           </div>
           <div class="info-row">
-            <p><strong>文献来源：</strong><span v-html="highlightText(article.source)"></span></p>
+            <p><strong>Source: </strong><span v-html="highlightText(article.source)"></span></p>
           </div>
           <div class="info-row">
-            <p><strong>发表时间：</strong><span v-html="highlightText(article.pubTime)"></span></p>
+            <p><strong>Published: </strong><span v-html="highlightText(article.pubTime)"></span></p>
           </div>
           <div class="info-row">
-            <p><strong>单位：</strong><span v-html="highlightText(article.organ)"></span></p>
+            <p><strong>Institution: </strong><span v-html="highlightText(article.organ)"></span></p>
           </div>
           <div class="info-row">
-            <p><strong>关键词：</strong><span v-html="highlightText(article.keyword)"></span></p>
+            <p><strong>Keywords: </strong><span v-html="highlightText(article.keyword)"></span></p>
           </div>
           <div class="info-row">
-            <p><strong>分类号：</strong><span v-html="highlightText(article.clc)"></span></p>
+            <p><strong>CLC No.: </strong><span v-html="highlightText(article.clc)"></span></p>
           </div>
           <div class="info-row">
-            <p><strong>第一责任人：</strong><span v-html="highlightText(article.firstDuty)"></span></p>
+            <p><strong>Primary Author: </strong><span v-html="highlightText(article.firstDuty)"></span></p>
           </div>
           <div class="info-row">
-            <p><strong>基金：</strong><span v-html="highlightText(article.fund)"></span></p>
+            <p><strong>Fund: </strong><span v-html="highlightText(article.fund)"></span></p>
           </div>
           <div class="info-row">
-            <p><strong>页数：</strong>{{ article.pageCount }}</p>
+            <p><strong>Pages: </strong>{{ article.pageCount }}</p>
           </div>
           <div class="info-row">
-            <p v-if="article.url"><strong>URL：</strong><span v-html="highlightText(article.url)"></span></p>
+            <p v-if="article.url"><strong>URL: </strong><span v-html="highlightText(article.url)"></span></p>
           </div>
           <div class="info-row">
-            <p v-if="article.doi"><strong>DOI：</strong><span v-html="highlightText(article.doi)"></span></p>
+            <p v-if="article.doi"><strong>DOI: </strong><span v-html="highlightText(article.doi)"></span></p>
           </div>
           <div class="abstract-box">
-            <strong>摘要：</strong>
+            <strong>Abstract: </strong>
             <div
                 :class="['article-summary', article.isExpanded ? 'expanded' : 'collapsed']"
                 v-html="highlightText(article.summary)"
@@ -83,13 +83,13 @@
                 @click="article.isExpanded = !article.isExpanded"
                 class="toggle-btn"
             >
-              {{ article.isExpanded ? '收起' : '展开' }}
+              {{ article.isExpanded ? 'Collapse' : 'Expand' }}
             </el-button>
           </div>
         </div>
       </el-card>
 
-      <!-- 分页组件 -->
+      <!-- Pagination -->
       <div class="pagination">
         <el-pagination
             background
@@ -105,7 +105,7 @@
     </div>
 
     <div class="no-result" v-else-if="searched">
-      <el-empty description="暂无搜索结果" :image-size="200"></el-empty>
+      <el-empty description="No results found" :image-size="200"></el-empty>
     </div>
   </div>
 </template>
@@ -131,7 +131,7 @@ export default {
     }
   },
   mounted() {
-    // 页面加载时自动执行搜索，默认获取所有数据
+    // Auto-search on page load
     this.handleSearch()
   },
   methods: {
@@ -139,7 +139,7 @@ export default {
       try {
         const searchParams = this.searchForm.inputValue
             ? { [this.searchForm.selectedField]: this.searchForm.inputValue }
-            : {}; // 如果没有输入值，发送空对象以获取所有数据
+            : {}; // Send empty object to get all data if no input
 
         const res = await request.post('/article/search', searchParams, {
           params: {
@@ -151,7 +151,7 @@ export default {
         this.pagination.total = res.data.total
         this.searched = true
       } catch {
-        this.$message.error('搜索失败')
+        this.$message.error('Search failed')
       }
     },
 
@@ -164,7 +164,7 @@ export default {
         pageSize: 10,
         total: 0
       }
-      // 重置后立即获取默认数据
+      // Reload default data after reset
       this.handleSearch()
     },
 

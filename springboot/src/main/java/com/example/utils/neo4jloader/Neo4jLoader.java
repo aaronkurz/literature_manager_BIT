@@ -15,26 +15,26 @@ public class Neo4jLoader {
 
     public Neo4jLoader(String uri, String user, String password) {
         driver = GraphDatabase.driver(uri, AuthTokens.basic(user, password));
-        LogUtil_Neo4jLoader.log("Neo4j 连接已建立: " + uri);
+        LogUtil_Neo4jLoader.log("Neo4j connection established: " + uri);
     }
 
     public void close() {
         driver.close();
-        LogUtil_Neo4jLoader.log("Neo4j 连接已关闭");
+        LogUtil_Neo4jLoader.log("Neo4j connection closed");
     }
 
     public void loadDataFromMySQL(String jdbcUrl, String jdbcUser, String jdbcPassword, String title, boolean ifDeleteAllNodeFirst) {
-        LogUtil_Neo4jLoader.log("开始从 MySQL 加载数据: " + jdbcUrl);
+        LogUtil_Neo4jLoader.log("Loading data from MySQL: " + jdbcUrl);
         try (Connection mysqlConnection = DriverManager.getConnection(jdbcUrl, jdbcUser, jdbcPassword)) {
-            LogUtil_Neo4jLoader.log("MySQL 连接已建立: " + jdbcUrl);
+            LogUtil_Neo4jLoader.log("MySQL connection established: " + jdbcUrl);
 
-            // 动态构建查询语句
+            // Build query dynamically
             String query = ifDeleteAllNodeFirst
                     ? "SELECT * FROM article_info"
                     : "SELECT * FROM article_info WHERE Title = ?";
 
             try (PreparedStatement statement = mysqlConnection.prepareStatement(query)) {
-                // 当需要条件查询时设置参数
+                // Set parameter for conditional query
                 if (!ifDeleteAllNodeFirst) {
                     statement.setString(1, title);
                 }
@@ -46,7 +46,7 @@ public class Neo4jLoader {
                     for (int i = 1; i <= columnCount; i++) {
                         cleanedHeaders.add(metaData.getColumnLabel(i).trim());
                     }
-                    LogUtil_Neo4jLoader.log("MySQL 表结构: " + cleanedHeaders);
+                    LogUtil_Neo4jLoader.log("MySQL table structure: " + cleanedHeaders);
 
                     try (Session session = driver.session()) {
                         while (resultSet.next()) {
@@ -64,7 +64,7 @@ public class Neo4jLoader {
                             }
                             boolean shouldContinue = processRecord(session, rowMap);
                             if (!shouldContinue) {
-                                LogUtil_Neo4jLoader.log("检测到已有数据，停止导入");
+                                LogUtil_Neo4jLoader.log("Existing data detected, stopping import");
                                 break;
                             }
                         }
@@ -72,64 +72,64 @@ public class Neo4jLoader {
                 }
             }
         } catch (SQLException e) {
-            LogUtil_Neo4jLoader.log("MySQL 连接或查询失败: " + e.getMessage());
+            LogUtil_Neo4jLoader.log("MySQL connection or query failed: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
     private boolean processRecord(Session session, Map<String, String> row) {
-            System.out.println("=== 处理记录 ===");
+            System.out.println("=== Processing record ===");
             System.out.println("Row keys: " + row.keySet());
-            System.out.println("检查custom_concept字段:");
-            System.out.println("  custom_concept1: " + (row.containsKey("custom_concept1") ? "存在 - " + row.get("custom_concept1") : "不存在"));
-            System.out.println("  custom_concept2: " + (row.containsKey("custom_concept2") ? "存在 - " + row.get("custom_concept2") : "不存在"));
-            System.out.println("  custom_concept3: " + (row.containsKey("custom_concept3") ? "存在 - " + row.get("custom_concept3") : "不存在"));
+            System.out.println("Checking custom_concept fields:");
+            System.out.println("  custom_concept1: " + (row.containsKey("custom_concept1") ? "exists - " + row.get("custom_concept1") : "not found"));
+            System.out.println("  custom_concept2: " + (row.containsKey("custom_concept2") ? "exists - " + row.get("custom_concept2") : "not found"));
+            System.out.println("  custom_concept3: " + (row.containsKey("custom_concept3") ? "exists - " + row.get("custom_concept3") : "not found"));
             String title = row.getOrDefault("Title", "").trim();
             System.out.println("Resolved title: '" + title + "'");
         if (title.isEmpty()) {
-            LogUtil_Neo4jLoader.log("记录无标题，跳过");
+            LogUtil_Neo4jLoader.log("Record has no title, skipping");
             return true;
         }
 
-        // 提取并处理作者列表 (限制最多5个作者)
+        // Extract author list (limit 5)
         List<String> authors = Arrays.stream(row.getOrDefault("Author", "").split(";"))
                 .map(String::trim)
                 .filter(a -> !a.isEmpty())
-                .limit(5)  // 限制最多5个作者
+                .limit(5)  // Limit to 5 authors
                 .sorted()
                 .collect(Collectors.toList());
 
-        // 检查是否存在相同标题和作者列表的论文
+        // Check for existing paper with same title and authors
         boolean exists = checkPaperExists(session, title, authors);
         if (exists) {
-            LogUtil_Neo4jLoader.log("检测到重复论文: 标题='" + title + "', 作者=" + authors);
+            LogUtil_Neo4jLoader.log("Duplicate paper detected: title='" + title + "', authors=" + authors);
             return false;
         }
 
-        // 创建新论文节点
+        // Create new paper node
         Long paperId = createPaper(session, row);
-        LogUtil_Neo4jLoader.log("创建论文节点成功: ID=" + paperId + ", 标题=" + title);
+        LogUtil_Neo4jLoader.log("Paper node created: ID=" + paperId + ", title=" + title);
 
-        // 处理作者关系 (限制最多5个作者)
+        // Process author relationships (limit 5)
         String[] authorArray = row.getOrDefault("Author", "").split(";");
         int authorCount = 0;
         for (String author : authorArray) {
             author = author.trim();
             if (!author.isEmpty() && authorCount < 5) {
                 createAuthorRelationship(session, paperId, author, row);
-                LogUtil_Neo4jLoader.log("创建作者关系: 论文ID=" + paperId + ", 作者=" + author);
+                LogUtil_Neo4jLoader.log("Author relationship created: paperID=" + paperId + ", author=" + author);
                 authorCount++;
             }
         }
 
-        // 处理其他关系（关键词、基金等）
+        // Process other relationships (keywords, funds, etc.)
         processRelationships(session, paperId, row);
 
         return true;
     }
 
     private boolean checkPaperExists(Session session, String title, List<String> authorList) {
-        String query = "MATCH (p:论文 {title: $title})-[:作者]->(a:作者) " +
+        String query = "MATCH (p:Paper {title: $title})-[:AUTHORED_BY]->(a:Author) " +
                 "WITH p, collect(a.name) AS dbAuthors " +
                 "WHERE dbAuthors = $sortedAuthors " +
                 "RETURN count(p) > 0 as exists";
@@ -147,7 +147,7 @@ public class Neo4jLoader {
     }
 
     private Long createPaper(Session session, Map<String, String> row) {
-        String query = "CREATE (p:论文 {title: $title, doi: $doi, abstract: $abstract, " +
+        String query = "CREATE (p:Paper {title: $title, doi: $doi, abstract: $abstract, " +
                 "pubDate: $pubDate, year: $year, pages: $pages, url: $url, " +
                 "created_at: timestamp()}) RETURN id(p) as id";
         Map<String, Object> params = new HashMap<>();
@@ -164,44 +164,44 @@ public class Neo4jLoader {
     }
 
     private void processRelationships(Session session, Long paperId, Map<String, String> row) {
-        // 处理关键词
+        // Process keywords
         String[] keywords = row.getOrDefault("Keyword", "").split(";");
         for (String keyword : keywords) {
             keyword = keyword.trim();
             if (!keyword.isEmpty()) {
                 createKeywordRelationship(session, paperId, keyword);
-                LogUtil_Neo4jLoader.log("创建关键词关系: 论文ID=" + paperId + ", 关键词=" + keyword);
+                LogUtil_Neo4jLoader.log("Keyword relationship created: paperID=" + paperId + ", keyword=" + keyword);
             }
         }
 
-        // 处理基金
+        // Process funds
         String[] funds = row.getOrDefault("Fund", "").split(";");
         for (String fund : funds) {
             fund = fund.trim();
             if (!fund.isEmpty()) {
                 createFundRelationship(session, paperId, fund);
-                LogUtil_Neo4jLoader.log("创建基金关系: 论文ID=" + paperId + ", 基金=" + fund);
+                LogUtil_Neo4jLoader.log("Fund relationship created: paperID=" + paperId + ", fund=" + fund);
             }
         }
 
-        // 处理分类号
+        // Process categories
         String[] clcs = row.getOrDefault("CLC", "").split(";");
         for (String clc : clcs) {
             clc = clc.trim();
             if (!clc.isEmpty()) {
                 createClcRelationship(session, paperId, clc);
-                LogUtil_Neo4jLoader.log("创建分类号关系: 论文ID=" + paperId + ", 分类号=" + clc);
+                LogUtil_Neo4jLoader.log("Category relationship created: paperID=" + paperId + ", category=" + clc);
             }
         }
 
-        // 处理来源库
+        // Process source DB
         String srcDatabase = row.get("SrcDatabase");
         if (srcDatabase != null && !srcDatabase.trim().isEmpty()) {
             createSrcDatabaseRelationship(session, paperId, srcDatabase.trim());
-            LogUtil_Neo4jLoader.log("创建来源库关系: 论文ID=" + paperId + ", 来源库=" + srcDatabase);
+            LogUtil_Neo4jLoader.log("SourceDB relationship created: paperID=" + paperId + ", sourceDB=" + srcDatabase);
         }
         
-        // 处理自定义概念
+        // Process custom concepts
         processCustomConcepts(session, paperId, row);
     }
     
@@ -209,14 +209,14 @@ public class Neo4jLoader {
      * Process custom concepts and create relationships
      */
     private void processCustomConcepts(Session session, Long paperId, Map<String, String> row) {
-        System.out.println("=== 开始处理自定义概念 ===");
-        System.out.println("论文ID: " + paperId);
+        System.out.println("=== Processing custom concepts ===");
+        System.out.println("Paper ID: " + paperId);
         
         for (int i = 1; i <= 3; i++) {
             String customConceptKey = "custom_concept" + i;
             String customConceptJson = row.get(customConceptKey);
             
-            System.out.println("检查自定义概念字段: " + customConceptKey + ", 值: " + 
+            System.out.println("Checking custom concept field: " + customConceptKey + ", value: " + 
                 (customConceptJson == null ? "NULL" : (customConceptJson.isEmpty() ? "EMPTY" : customConceptJson)));
             
             if (customConceptJson == null || customConceptJson.trim().isEmpty()) {
@@ -228,23 +228,23 @@ public class Neo4jLoader {
                 com.google.gson.JsonObject json = com.google.gson.JsonParser.parseString(customConceptJson).getAsJsonObject();
                 
                 if (!json.has("relationshipName") || !json.has("matchingConcepts")) {
-                    System.err.println("JSON缺少必需字段: " + customConceptJson);
+                    System.err.println("JSON missing required fields: " + customConceptJson);
                     continue;
                 }
                 
                 // Check for null values
                 if (json.get("relationshipName").isJsonNull() || json.get("matchingConcepts").isJsonNull()) {
-                    System.err.println("JSON字段为null: " + customConceptJson);
+                    System.err.println("JSON field is null: " + customConceptJson);
                     continue;
                 }
                 
                 String relationshipName = json.get("relationshipName").getAsString();
                 com.google.gson.JsonArray concepts = json.getAsJsonArray("matchingConcepts");
                 
-                System.out.println("解析自定义概念: 关系=" + relationshipName + ", 概念数=" + concepts.size());
+                System.out.println("Parsed custom concept: relationship=" + relationshipName + ", conceptCount=" + concepts.size());
                 
                 if (relationshipName == null || relationshipName.trim().isEmpty() || concepts.size() == 0) {
-                    System.err.println("关系名为空或概念列表为空");
+                    System.err.println("Relationship name is empty or concept list is empty");
                     continue;
                 }
                 
@@ -254,18 +254,18 @@ public class Neo4jLoader {
                         String conceptValue = concepts.get(j).getAsString();
                         if (conceptValue != null && !conceptValue.trim().isEmpty()) {
                             createCustomConceptRelationship(session, paperId, relationshipName, conceptValue);
-                            System.out.println("创建自定义概念关系: 论文ID=" + paperId + 
-                                ", 关系=" + relationshipName + ", 概念=" + conceptValue);
+                            System.out.println("Custom concept relationship created: paperID=" + paperId + 
+                                ", relationship=" + relationshipName + ", concept=" + conceptValue);
                         }
                     }
                 }
                 
             } catch (Exception e) {
-                System.err.println("解析自定义概念失败: " + customConceptKey + " - " + e.getMessage());
+                System.err.println("Failed to parse custom concept: " + customConceptKey + " - " + e.getMessage());
                 e.printStackTrace();
             }
         }
-        System.out.println("=== 自定义概念处理完成 ===");
+        System.out.println("=== Custom concepts processing completed ===");
     }
     
     /**
@@ -274,9 +274,9 @@ public class Neo4jLoader {
     private void createCustomConceptRelationship(Session session, Long paperId, String relationshipName, String conceptValue) {
         // Using dynamic relationship type is not directly supported in Cypher, 
         // so we'll create a generic CUSTOM_CONCEPT relationship with properties
-        String query = "MATCH (p:论文) WHERE id(p) = $paperId " +
-                "MERGE (c:自定义概念 {name: $conceptValue, relationship: $relationshipName}) " +
-                "MERGE (p)-[r:自定义概念关系]->(c) " +
+        String query = "MATCH (p:Paper) WHERE id(p) = $paperId " +
+                "MERGE (c:CustomConcept {name: $conceptValue, relationship: $relationshipName}) " +
+                "MERGE (p)-[r:HAS_CUSTOM_CONCEPT]->(c) " +
                 "SET r.type = $relationshipName";
         
         Map<String, Object> params = new HashMap<>();
@@ -287,14 +287,14 @@ public class Neo4jLoader {
         session.run(query, params);
     }
 
-    // 以下关系创建方法保持不变
+    // Relationship creation methods
     private void createAuthorRelationship(Session session, Long paperId, String author, Map<String, String> row) {
-        String query = "MATCH (p:论文) WHERE id(p) = $paperId " +
-                "MERGE (a:作者 {name: $author}) " +
-                "MERGE (o:文献来源 {name: $source}) " +
-                "MERGE (p)-[:作者]->(a) " +
-                "MERGE (a)-[:所属]->(o) " +
-                "MERGE (o)-[:隶属于]->(:单位 {name: $organ})";
+        String query = "MATCH (p:Paper) WHERE id(p) = $paperId " +
+                "MERGE (a:Author {name: $author}) " +
+                "MERGE (o:Source {name: $source}) " +
+                "MERGE (p)-[:AUTHORED_BY]->(a) " +
+                "MERGE (a)-[:BELONGS_TO]->(o) " +
+                "MERGE (o)-[:AFFILIATED_WITH]->(:Institution {name: $organ})";
 
         Map<String, Object> params = new HashMap<>();
         params.put("paperId", paperId);
@@ -306,35 +306,35 @@ public class Neo4jLoader {
     }
 
     private void createKeywordRelationship(Session session, Long paperId, String keyword) {
-        String query = "MATCH (p:论文) WHERE id(p) = $paperId " +
-                "MERGE (k:关键词 {name: $keyword}) " +
-                "MERGE (p)-[:关键词]->(k)";
+        String query = "MATCH (p:Paper) WHERE id(p) = $paperId " +
+                "MERGE (k:Keyword {name: $keyword}) " +
+                "MERGE (p)-[:HAS_KEYWORD]->(k)";
         session.run(query, Map.of("paperId", paperId, "keyword", keyword));
     }
 
     private void createFundRelationship(Session session, Long paperId, String fundStr) {
-        String query = "MATCH (p:论文) WHERE id(p) = $paperId " +
-                "MERGE (f:基金 {name: $name}) " +
-                "MERGE (f)-[:资助]->(p)";
+        String query = "MATCH (p:Paper) WHERE id(p) = $paperId " +
+                "MERGE (f:Fund {name: $name}) " +
+                "MERGE (f)-[:FUNDED_BY]->(p)";
         session.run(query, Map.of("paperId", paperId, "name", fundStr.trim()));
     }
 
     private void createClcRelationship(Session session, Long paperId, String clc) {
-        String query = "MATCH (p:论文) WHERE id(p) = $paperId " +
-                "MERGE (c:分类号 {code: $code}) " +
-                "MERGE (p)-[:分类]->(c)";
+        String query = "MATCH (p:Paper) WHERE id(p) = $paperId " +
+                "MERGE (c:Category {code: $code}) " +
+                "MERGE (p)-[:CLASSIFIED_AS]->(c)";
         session.run(query, Map.of("paperId", paperId, "code", clc));
     }
 
     private void createSrcDatabaseRelationship(Session session, Long paperId, String srcDatabase) {
-        String query = "MATCH (p:论文) WHERE id(p) = $paperId " +
-                "MERGE (s:来源库 {name: $srcDatabase}) " +
-                "MERGE (p)-[:来源库]->(s)";
+        String query = "MATCH (p:Paper) WHERE id(p) = $paperId " +
+                "MERGE (s:SourceDB {name: $srcDatabase}) " +
+                "MERGE (p)-[:FROM_SOURCE]->(s)";
         session.run(query, Map.of("paperId", paperId, "srcDatabase", srcDatabase));
     }
 
     public static void runNeo4jLoader(boolean ifDeleteAllNodeFirst,String title) {
-        System.out.println("=== 开始运行 Neo4jLoader ===");
+        System.out.println("=== Starting Neo4jLoader ===");
         System.out.println("  ifDeleteAllNodeFirst: " + ifDeleteAllNodeFirst);
         System.out.println("  title: " + title);
         
@@ -343,20 +343,20 @@ public class Neo4jLoader {
             try (Session session = driver.session()) {
                 String query = "MATCH (n) DETACH DELETE n";
                 session.run(query);
-                LogUtil_Neo4jLoader.log("已删除所有节点及其关系");
+                LogUtil_Neo4jLoader.log("All nodes and relationships deleted");
             } catch (Exception e) {
-                LogUtil_Neo4jLoader.log("删除节点失败: " + e.getMessage());
+                LogUtil_Neo4jLoader.log("Failed to delete nodes: " + e.getMessage());
                 e.printStackTrace();
             }
         }
         try {
-            System.out.println("调用 loadDataFromMySQL...");
+            System.out.println("Calling loadDataFromMySQL...");
             loader.loadDataFromMySQL(Config.MYSQL_LINK, Config.MYSQL_USERNAME, Config.MYSQL_PASSWORD,title,ifDeleteAllNodeFirst);
-            LogUtil_Neo4jLoader.log("数据导入完成");
-            System.out.println("=== Neo4jLoader 完成 ===");
+            LogUtil_Neo4jLoader.log("Data import completed");
+            System.out.println("=== Neo4jLoader completed ===");
         } catch (Exception e) {
-            LogUtil_Neo4jLoader.log("数据导入失败: " + e.getMessage());
-            System.err.println("Neo4j数据导入失败: " + e.getMessage());
+            LogUtil_Neo4jLoader.log("Data import failed: " + e.getMessage());
+            System.err.println("Neo4j data import failed: " + e.getMessage());
             e.printStackTrace();
         } finally {
             loader.close();

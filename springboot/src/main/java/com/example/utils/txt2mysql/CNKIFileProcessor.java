@@ -9,15 +9,15 @@ import java.util.List;
 
 public class CNKIFileProcessor {
     public static void main(String[] args) {
-        String inputDir = "D:\\Program Files\\Desktop\\CNKI"; // 修改为你的输入目录
+        String inputDir = "D:\\Program Files\\Desktop\\CNKI"; // Set your input directory
         String encoding = "UTF-8";
 
         try {
-            // 创建数据库表并加载现有记录的 Title-Author 组合
+            // Create DB table and load existing Title-Author combos
             DatabaseHelper.createTableIfNotExists();
             DatabaseHelper.loadExistTitleAuthorCombinations();
 
-            // 遍历目录下的所有TXT文件
+            // Iterate all TXT files in directory
             File dir = new File(inputDir);
             File[] files = dir.listFiles((dir1, name) -> name.toLowerCase().endsWith(".txt"));
             if (files == null) {
@@ -40,7 +40,7 @@ public class CNKIFileProcessor {
                 allRecords.addAll(records);
             }
 
-            // 插入数据到数据库
+            // Insert data into database
             for (Record record : allRecords) {
                 DatabaseHelper.insertRecord(record);
             }
@@ -54,7 +54,7 @@ public class CNKIFileProcessor {
 
     private static List<Record> parseContent(String content) {
         List<Record> records = new ArrayList<>();
-        String[] blocks = content.split("\n\n"); // 使用 "\n\n" 匹配空行
+        String[] blocks = content.split("\n\n"); // Split by blank lines
 
         for (String block : blocks) {
             block = block.trim();
