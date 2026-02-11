@@ -1,29 +1,29 @@
 <template>
   <div>
     <div class="search">
-      <el-input placeholder="请输入标题查询" style="width: 200px" v-model="title"></el-input>
-      <el-button type="info" plain style="margin-left: 10px" @click="load(1)">查询</el-button>
-      <el-button type="warning" plain style="margin-left: 10px" @click="reset">重置</el-button>
+      <el-input placeholder="Search by title" style="width: 200px" v-model="title"></el-input>
+      <el-button type="info" plain style="margin-left: 10px" @click="load(1)">Search</el-button>
+      <el-button type="warning" plain style="margin-left: 10px" @click="reset">Reset</el-button>
     </div>
 
     <div class="operation">
-<!--      <el-button type="primary" plain @click="handleAdd">新增</el-button>-->
-      <el-button type="danger" plain @click="delBatch">批量删除</el-button>
+<!--      <el-button type="primary" plain @click="handleAdd">Add</el-button>-->
+      <el-button type="danger" plain @click="delBatch">Batch Delete</el-button>
     </div>
 
     <div class="table">
       <el-table :data="tableData" stripe @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" align="center"></el-table-column>
-        <el-table-column prop="id" label="序号" width="70" align="center" sortable></el-table-column>
-        <el-table-column prop="title" label="标题"></el-table-column>
-        <el-table-column prop="author" label="作者"></el-table-column>
-        <el-table-column prop="srcDatabase" label="来源库"></el-table-column>
-        <el-table-column prop="year" label="年份"></el-table-column>
+        <el-table-column prop="id" label="ID" width="70" align="center" sortable></el-table-column>
+        <el-table-column prop="title" label="Title"></el-table-column>
+        <el-table-column prop="author" label="Author"></el-table-column>
+        <el-table-column prop="srcDatabase" label="Source DB"></el-table-column>
+        <el-table-column prop="year" label="Year"></el-table-column>
         <el-table-column prop="doi" label="DOI"></el-table-column>
-        <el-table-column label="操作" align="center" width="180">
+        <el-table-column label="Actions" align="center" width="180">
           <template v-slot="scope">
-            <el-button size="mini" type="primary" plain @click="handleEdit(scope.row)">编辑</el-button>
-            <el-button size="mini" type="danger" plain @click="del(scope.row.id)">删除</el-button>
+            <el-button size="mini" type="primary" plain @click="handleEdit(scope.row)">Edit</el-button>
+            <el-button size="mini" type="danger" plain @click="del(scope.row.id)">Delete</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -41,46 +41,46 @@
       </div>
     </div>
 
-    <el-dialog title="文章信息" :visible.sync="fromVisible" width="40%" :close-on-click-modal="false" destroy-on-close>
+    <el-dialog title="Article Information" :visible.sync="fromVisible" width="40%" :close-on-click-modal="false" destroy-on-close>
       <el-form :model="form" label-width="100px" style="padding-right: 50px" :rules="rules" ref="formRef">
-        <el-form-item label="来源库" prop="srcDatabase">
-          <el-input v-model="form.srcDatabase" placeholder="来源库"></el-input>
+        <el-form-item label="Source DB" prop="srcDatabase">
+          <el-input v-model="form.srcDatabase" placeholder="Source DB"></el-input>
         </el-form-item>
-        <el-form-item label="标题" prop="title">
-          <el-input v-model="form.title" placeholder="标题"></el-input>
+        <el-form-item label="Title" prop="title">
+          <el-input v-model="form.title" placeholder="Title"></el-input>
         </el-form-item>
-        <el-form-item label="作者" prop="author">
-          <el-input v-model="form.author" placeholder="作者"></el-input>
+        <el-form-item label="Author" prop="author">
+          <el-input v-model="form.author" placeholder="Author"></el-input>
         </el-form-item>
-        <el-form-item label="组织" prop="organ">
-          <el-input v-model="form.organ" placeholder="组织"></el-input>
+        <el-form-item label="Organization" prop="organ">
+          <el-input v-model="form.organ" placeholder="Organization"></el-input>
         </el-form-item>
-        <el-form-item label="来源" prop="source">
-          <el-input v-model="form.source" placeholder="来源"></el-input>
+        <el-form-item label="Source" prop="source">
+          <el-input v-model="form.source" placeholder="Source"></el-input>
         </el-form-item>
-        <el-form-item label="关键词" prop="keyword">
-          <el-input v-model="form.keyword" placeholder="关键词"></el-input>
+        <el-form-item label="Keywords" prop="keyword">
+          <el-input v-model="form.keyword" placeholder="Keywords"></el-input>
         </el-form-item>
-        <el-form-item label="摘要" prop="summary">
-          <el-input type="textarea" v-model="form.summary" placeholder="摘要"></el-input>
+        <el-form-item label="Abstract" prop="summary">
+          <el-input type="textarea" v-model="form.summary" placeholder="Abstract"></el-input>
         </el-form-item>
-        <el-form-item label="发布时间" prop="pubTime">
-          <el-input v-model="form.pubTime" placeholder="发布时间"></el-input>
+        <el-form-item label="Pub. Date" prop="pubTime">
+          <el-input v-model="form.pubTime" placeholder="Pub. Date"></el-input>
         </el-form-item>
-        <el-form-item label="第一责任人" prop="firstDuty">
-          <el-input v-model="form.firstDuty" placeholder="第一责任人"></el-input>
+        <el-form-item label="Primary Author" prop="firstDuty">
+          <el-input v-model="form.firstDuty" placeholder="Primary Author"></el-input>
         </el-form-item>
-        <el-form-item label="基金" prop="fund">
-          <el-input v-model="form.fund" placeholder="基金"></el-input>
+        <el-form-item label="Fund" prop="fund">
+          <el-input v-model="form.fund" placeholder="Fund"></el-input>
         </el-form-item>
-        <el-form-item label="年份" prop="year">
-          <el-input v-model="form.year" placeholder="年份"></el-input>
+        <el-form-item label="Year" prop="year">
+          <el-input v-model="form.year" placeholder="Year"></el-input>
         </el-form-item>
-        <el-form-item label="页数" prop="pageCount">
-          <el-input v-model="form.pageCount" placeholder="页数"></el-input>
+        <el-form-item label="Pages" prop="pageCount">
+          <el-input v-model="form.pageCount" placeholder="Pages"></el-input>
         </el-form-item>
-        <el-form-item label="分类号" prop="clc">
-          <el-input v-model="form.clc" placeholder="分类号"></el-input>
+        <el-form-item label="CLC No." prop="clc">
+          <el-input v-model="form.clc" placeholder="CLC No."></el-input>
         </el-form-item>
         <el-form-item label="URL" prop="url">
           <el-input v-model="form.url" placeholder="URL"></el-input>
@@ -90,8 +90,8 @@
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
-        <el-button @click="fromVisible = false">取 消</el-button>
-        <el-button type="primary" @click="save">确 定</el-button>
+        <el-button @click="fromVisible = false">Cancel</el-button>
+        <el-button type="primary" @click="save">OK</el-button>
       </div>
     </el-dialog>
   </div>
@@ -111,7 +111,7 @@ export default {
       form: {},
       rules: {
         title: [
-          { required: true, message: '请输入标题', trigger: 'blur' },
+          { required: true, message: 'Please enter title', trigger: 'blur' },
         ],
       },
       ids: []
@@ -138,7 +138,7 @@ export default {
             data: this.form
           }).then(res => {
             if (res.code === '200') {
-              this.$message.success('保存成功')
+              this.$message.success('Saved successfully')
               this.load(1)
               this.fromVisible = false
             } else {
@@ -149,10 +149,10 @@ export default {
       })
     },
     del(id) {
-      this.$confirm('您确定删除吗？', '确认删除', { type: "warning" }).then(() => {
+      this.$confirm('Are you sure you want to delete?', 'Confirm Delete', { type: "warning" }).then(() => {
         this.$request.delete('/articleInfo/delete/' + id).then(res => {
           if (res.code === '200') {
-            this.$message.success('操作成功')
+            this.$message.success('Operation successful')
             this.load(1)
           } else {
             this.$message.error(res.msg)
@@ -165,13 +165,13 @@ export default {
     },
     delBatch() {
       if (!this.ids.length) {
-        this.$message.warning('请选择数据')
+        this.$message.warning('Please select data')
         return
       }
-      this.$confirm('您确定批量删除这些数据吗？', '确认删除', { type: "warning" }).then(() => {
+      this.$confirm('Are you sure you want to delete selected items?', 'Confirm Delete', { type: "warning" }).then(() => {
         this.$request.delete('/articleInfo/delete/batch', { data: this.ids }).then(res => {
           if (res.code === '200') {
-            this.$message.success('操作成功')
+            this.$message.success('Operation successful')
             this.load(1)
           } else {
             this.$message.error(res.msg)
