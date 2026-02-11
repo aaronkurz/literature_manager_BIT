@@ -1,15 +1,15 @@
 <template>
   <div class="manager-container">
-    <!-- 头部 -->
+    <!-- Header -->
     <div class="manager-header">
       <div class="manager-header-left">
         <img src="@/assets/imgs/logo.png" />
-        <div class="title">后台管理系统</div>
+        <div class="title">Admin Management System</div>
       </div>
 
       <div class="manager-header-center">
         <el-breadcrumb separator-class="el-icon-arrow-right">
-          <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
+          <el-breadcrumb-item :to="{ path: '/' }">Home</el-breadcrumb-item>
           <el-breadcrumb-item :to="{ path: $route.path }">{{ $route.meta.name }}</el-breadcrumb-item>
         </el-breadcrumb>
       </div>
@@ -18,47 +18,47 @@
         <el-dropdown placement="bottom">
           <div class="avatar">
             <img :src="user.avatar || 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png'" />
-            <div>{{ user.name || '管理员' }}</div>
+            <div>{{ user.name || 'Admin' }}</div>
           </div>
           <el-dropdown-menu slot="dropdown">
-            <el-dropdown-item @click.native="goToPerson">个人信息</el-dropdown-item>
-            <el-dropdown-item @click.native="$router.push('/password')">修改密码</el-dropdown-item>
-            <el-dropdown-item @click.native="logout">退出登录</el-dropdown-item>
+            <el-dropdown-item @click.native="goToPerson">Profile</el-dropdown-item>
+            <el-dropdown-item @click.native="$router.push('/password')">Change Password</el-dropdown-item>
+            <el-dropdown-item @click.native="logout">Log Out</el-dropdown-item>
           </el-dropdown-menu>
         </el-dropdown>
       </div>
     </div>
 
-    <!-- 主体 -->
+    <!-- Main Content -->
     <div class="manager-main">
-      <!-- 侧边栏 -->
+      <!-- Sidebar -->
       <div class="manager-main-left">
         <el-menu :default-openeds="['info', 'user']" router style="border: none" :default-active="$route.path">
           <el-menu-item index="/manager">
             <i class="el-icon-s-home"></i>
-            <span slot="title">系统首页</span>
+            <span slot="title">Dashboard</span>
           </el-menu-item>
           <el-submenu index="info">
             <template slot="title">
-              <i class="el-icon-menu"></i><span>信息管理</span>
+              <i class="el-icon-menu"></i><span>Information</span>
             </template>
-            <el-menu-item index="/notice">公告信息</el-menu-item>
+            <el-menu-item index="/notice">Announcements</el-menu-item>
           </el-submenu>
 
           <el-submenu index="user">
             <template slot="title">
-              <i class="el-icon-menu"></i><span>成员管理</span>
+              <i class="el-icon-menu"></i><span>Members</span>
             </template>
-            <el-menu-item index="/admin">用户管理</el-menu-item>
+            <el-menu-item index="/admin">User Management</el-menu-item>
           </el-submenu>
           <el-menu-item index="/articleInfo">
             <i class="el-icon-document"></i>
-            <span slot="title">文章信息</span>
+            <span slot="title">Articles</span>
           </el-menu-item>
         </el-menu>
       </div>
 
-      <!-- 数据表格 -->
+      <!-- Data Table -->
       <div class="manager-main-right">
         <router-view @update:user="updateUser" />
       </div>
