@@ -3,7 +3,7 @@ import VueRouter from 'vue-router'
 
 Vue.use(VueRouter)
 
-// 解决导航栏或者底部导航tabBar中的vue-router在3.0版本以上频繁点击菜单报错的问题。
+// Fix vue-router 3.0+ navigation duplicate error
 const originalPush = VueRouter.prototype.push
 VueRouter.prototype.push = function push(location) {
     return originalPush.call(this, location).catch(err => err)
@@ -12,7 +12,7 @@ VueRouter.prototype.push = function push(location) {
 const routes = [
     {
         path: '/',
-        redirect: '/front/home'  // 直接重定向到主页
+        redirect: '/front/home'  // Redirect to home page
     },
     {
         path: '/front',
@@ -22,47 +22,47 @@ const routes = [
             {
                 path: 'home',
                 name: 'Home',
-                meta: {name: '系统首页'},
+                meta: {name: 'Home'},
                 component: () => import('../views/front/Home')},
             {
                 path: 'article/:id',
                 name: 'ArticleDetail',
-                meta: {name: '文章详情'},
+                meta: {name: 'Article Detail'},
                 component: () => import('../views/front/ArticleDetail')
             },
             {
                 path: 'upload',
                 name: 'Upload',
-                meta: {name: '论文上传'},
+                meta: {name: 'Paper Upload'},
                 component: () => import('../views/front/Upload')
             },
             {
                 path: 'processing/:taskId',
                 name: 'ProcessingStatus',
-                meta: {name: '处理状态'},
+                meta: {name: 'Processing Status'},
                 component: () => import('../views/front/ProcessingStatus')
             },
             {
                 path: 'graph',
                 name: 'Graph',
-                meta: {name: '知识图谱'},
+                meta: {name: 'Knowledge Graph'},
                 component: () => import('../views/front/Graph')
             },
             {
                 path: 'graph-personalization',
                 name: 'GraphPersonalization',
-                meta: {name: '图谱个性化'},
+                meta: {name: 'Graph Personalization'},
                 component: () => import('../views/front/GraphPersonalization')
             },
             {
                 path: 'settings',
                 name: 'Settings',
-                meta: {name: '设置'},
+                meta: {name: 'Settings'},
                 component: () => import('../views/front/Settings')
             },
         ]
     },
-    {path: '*', name: 'NotFound', meta: {name: '无法访问'}, component: () => import('../views/404.vue')},
+    {path: '*', name: 'NotFound', meta: {name: 'Not Found'}, component: () => import('../views/404.vue')},
 ]
 
 const router = new VueRouter({
@@ -71,7 +71,7 @@ const router = new VueRouter({
     routes
 })
 
-// 移除路由守卫 - 无需身份验证
+// Remove route guard - no authentication required
 router.beforeEach((to, from, next) => {
     next();
 })
